@@ -1,10 +1,10 @@
 # Zapret Control
 
-Панель управления обходом на базе [zapret-discord-youtube](https://github.com/Flowseal/zapret-discord-youtube). Помогает открыть YouTube, Discord, Roblox, SoundCloud и другие сервисы, если они не работают из‑за ограничений провайдера.
+Программа на базе [zapret-discord-youtube](https://github.com/Flowseal/zapret-discord-youtube), которая помогает открыть YouTube, Discord, Roblox, SoundCloud и другие сайты, если они не работают у вашего провайдера.
 
-- **Windows:** готовое приложение (`ZapretControl.exe`)
-- **Linux:** приложение (исходники, Python/Tkinter) — `linux-app/`
-- **macOS:** приложение (исходники, Swift/AppKit) — `macos-app/`
+- **Windows** — готовое приложение (`ZapretControl.exe`)
+- **Linux** — приложение из исходников (Python/Tkinter), папка `linux-app/`
+- **macOS** — приложение из исходников (Swift/AppKit), папка `macos-app/`
 
 ![Скриншот](docs/screenshot.png)
 
@@ -12,64 +12,58 @@
 
 ### Windows
 1. Скачайте `ZapretControl-windows.zip` из [Releases](../../releases) и распакуйте.
-2. Запустите `ZapretControl.exe`.
-3. Разрешите запуск **от имени администратора**.
-4. Дождитесь подготовки, выберите стратегию и нажмите **«Применить»**. Если не помогает — попробуйте другую стратегию.
+2. Запустите `ZapretControl.exe` от имени администратора.
+3. Выберите стратегию и нажмите **«Применить»**. Если не заработало — попробуйте другую.
 
 ### Linux
-1. Скачайте `ZapretControl-linux-src.zip` из [Releases](../../releases) и распакуйте (или используйте папку `linux-app/` из репозитория).
-2. Установите зависимости: Python 3.8+, `python3-tk`, `git`, `curl`, `nftables`.
-3. Запустите:
+1. Скачайте `ZapretControl-linux-src.zip` из [Releases](../../releases) и распакуйте (или возьмите папку `linux-app/`).
+2. Поставьте зависимости: Python 3.8+, `python3-tk`, `git`, `curl`, `nftables`.
+3. Запуск:
    ```bash
    cd linux-app
    python3 zapret_control_linux.py
    ```
-4. В приложении установите/укажите базу zapret (на основе [Sergeydigl3/zapret-discord-youtube-linux](https://github.com/Sergeydigl3/zapret-discord-youtube-linux)), управляйте сервисом/стратегиями и TgProxy.
-
-Опционально: сборка в бинарник через PyInstaller — см. `linux-app/README.md`.
+   Внутри можно установить базу [zapret-discord-youtube-linux](https://github.com/Sergeydigl3/zapret-discord-youtube-linux), выбрать стратегию, управлять сервисом и TgProxy. Сборка в один файл через PyInstaller описана в `linux-app/README.md`.
 
 ### macOS
-1. Скачайте `ZapretControl-macos-src.zip` из [Releases](../../releases) и распакуйте (или используйте `macos-app/`).
-2. На Mac (macOS 13+, Xcode Command Line Tools) соберите приложение:
+1. Скачайте `ZapretControl-macos-src.zip` из [Releases](../../releases) и распакуйте (или возьмите папку `macos-app/`).
+2. На Mac (macOS 13+, Xcode Command Line Tools) соберите:
    ```bash
    cd macos-app
    chmod +x build.sh
    ./build.sh
    ```
-3. Запустите `build/ZapretControl.app` (при необходимости перенесите в `/Applications` и разрешите запуск в настройках безопасности).
-4. Через меню управляйте TgProxy (установка/запуск/автозапуск) и открывайте [ZapretMac](https://github.com/Flowseal/zapret-mac-discord-youtube) для настройки обхода (стратегии/IPSet).
+3. Откройте `build/ZapretControl.app` (можно перенести в `/Applications`). Если macOS не даст открыть — разрешите в настройках безопасности.
+4. Через меню можно поставить/запустить TgProxy и автозапуск, а для самого обхода открыть [ZapretMac](https://github.com/Flowseal/zapret-mac-discord-youtube) и настроить стратегию/IPSet там.
 
-> Готовые `.app`/бинарники для Linux и macOS в релиз не прикладываются — публикуются исходники, собираемые на целевой ОС.
-
-### Дополнительно (скриптовые пакеты)
-В репозитории и релизах также есть `linux/` и `macos/` — скриптовые наборы для быстрого запуска upstream-компонентов и TgProxy.
+Готовых бинарников для Linux и macOS в релизе нет — только исходники, их нужно собрать на своей системе. В репозитории также есть скриптовые наборы `linux/` и `macos/`.
 
 ## Что делают настройки
 
 ### Windows
-- **Стратегия + «Применить»** — выбирает параметры обхода (nfqws/winws). Если не помогает — попробуйте другую стратегию.
-- **Служба zapret** — запуск/остановка/перезапуск системной службы обхода.
-- **Автозапуск службы** — запуск службы zapret вместе с Windows.
-- **Проверки** — проверка доступности сервисов (YouTube, Discord, Roblox, SoundCloud, Telegram) для текущей стратегии.
-- **Game Filter** — область применения обхода для игрового трафика (`disabled` / `tcp` / `udp` / `all`).
-- **IPSet Filter** — режим списков IP (`loaded` / `none` / `any`) для обхода.
-- **Auto-Update** — автообновление компонентов zapret (если поддерживается сборкой).
-- **Автозапуск приложения** — запускать Zapret Control при входе в Windows.
-- **Replace fakes** — замена/обновление активных fake/bin-данных.
-- **Кнопка «Сохранить»** — сохраняет настройки (zapret-параметры применяются автоматически при необходимости).
-- **Telegram / TgProxy** — локальный прокси для Telegram Desktop: установка, запуск/остановка, порт, подключение, настройки (host/port, буферы, пул, режимы cfproxy/h2/no_secure и др.).
+- **Стратегия + «Применить»** — переключает способ обхода. Если сайт не открылся, обычно помогает другая стратегия.
+- **Служба zapret** — запуск, остановка и перезапуск службы, которая делает обход.
+- **Автозапуск службы** — чтобы служба поднималась вместе с Windows.
+- **Проверки** — быстро показывает, открываются ли YouTube, Discord, Roblox, SoundCloud, Telegram.
+- **Game Filter** — применять обход к игровому трафику: `disabled` / `tcp` / `udp` / `all`.
+- **IPSet Filter** — какой список IP использовать: `loaded` / `none` / `any`.
+- **Auto-Update** — автообновление частей zapret (если это поддерживает сборка).
+- **Автозапуск приложения** — запускать сам Zapret Control при входе в систему.
+- **Replace fakes** — обновить текущие fake/bin-файлы.
+- **«Сохранить»** — сохраняет настройки (нужные параметры применяются сразу).
+- **Telegram / TgProxy** — локальный прокси для Telegram Desktop: установить, запустить/остановить, выбрать порт, подключить Telegram и поменять параметры прокси (host/port, буферы, пул, cfproxy/h2/no_secure и т.п.).
 
 ### Linux
-- **База zapret** — путь/установка базы [zapret-discord-youtube-linux](https://github.com/Sergeydigl3/zapret-discord-youtube-linux), управление сервисом и стратегиями (через `service.sh`/`conf.env`).
+- **База zapret** — где лежит/устанавливается [zapret-discord-youtube-linux](https://github.com/Sergeydigl3/zapret-discord-youtube-linux), оттуда же берутся стратегии и управление сервисом.
 - **TgProxy** — установка, запуск/остановка, порт, автозапуск (user `systemd`).
-- **Автозапуск приложения** — добавление `.desktop` в автозапуск пользователя.
-- **Проверки** — базовая проверка доступности сервисов.
+- **Автозапуск приложения** — добавляет себя в автозапуск пользователя.
+- **Проверки** — простая проверка доступности сайтов.
 
 ### macOS
-- **TgProxy** — установка, запуск/остановка, автозапуск (LaunchAgent).
-- **ZapretMac** — открытие [ZapretMac](https://github.com/Flowseal/zapret-mac-discord-youtube), где настраиваются стратегии, списки и IPSet (обход трафика).
-- **Автозапуск приложения** — LaunchAgent для запуска приложения при входе.
-- **Проверки** — базовая проверка доступности сервисов.
+- **TgProxy** — установка, запуск/остановка и автозапуск (LaunchAgent).
+- **ZapretMac** — открывает [ZapretMac](https://github.com/Flowseal/zapret-mac-discord-youtube), где настраиваются стратегии, списки и IPSet.
+- **Автозапуск приложения** — автозапуск через LaunchAgent.
+- **Проверки** — простая проверка доступности сайтов.
 
 ## Сборка (Windows)
 
@@ -79,4 +73,4 @@ src\build.bat
 
 ## Компоненты
 
-См. [NOTICE.md](NOTICE.md). Основано на [Flowseal/zapret-discord-youtube](https://github.com/Flowseal/zapret-discord-youtube), [Sergeydigl3/zapret-discord-youtube-linux](https://github.com/Sergeydigl3/zapret-discord-youtube-linux), [Flowseal/zapret-mac-discord-youtube](https://github.com/Flowseal/zapret-mac-discord-youtube), [Flowseal/tg-ws-proxy](https://github.com/Flowseal/tg-ws-proxy).
+[NOTICE.md](NOTICE.md). Используются: [zapret-discord-youtube](https://github.com/Flowseal/zapret-discord-youtube), [zapret-discord-youtube-linux](https://github.com/Sergeydigl3/zapret-discord-youtube-linux), [zapret-mac-discord-youtube](https://github.com/Flowseal/zapret-mac-discord-youtube), [tg-ws-proxy](https://github.com/Flowseal/tg-ws-proxy).
