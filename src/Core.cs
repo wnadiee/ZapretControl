@@ -55,9 +55,18 @@ namespace ZapretControl
             get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ZapretControl"); }
         }
 
+        public static string BundledInstallDir
+        {
+            get { return Path.Combine(AppBaseDir, "zapret"); }
+        }
+
         public static string DefaultInstallDir
         {
-            get { return Path.Combine(LocalDir, "zapret"); }
+            get
+            {
+                if (IsInstallDir(BundledInstallDir)) return BundledInstallDir;
+                return Path.Combine(LocalDir, "zapret");
+            }
         }
 
         public static string ConfigFile
@@ -67,7 +76,22 @@ namespace ZapretControl
 
         public static string TgProxyExe
         {
-            get { return Path.Combine(LocalDir, "TgWsProxy.exe"); }
+            get { return Path.Combine(LocalDir, "tgproxy.svc"); }
+        }
+
+        public static void MigrateTgProxyExe()
+        {
+            try
+            {
+                string old = Path.Combine(LocalDir, "TgWsProxy.exe");
+                string neu = TgProxyExe;
+                if (File.Exists(old) && !File.Exists(neu))
+                {
+                    try { StopTgProxy(); } catch { }
+                    File.Move(old, neu);
+                }
+            }
+            catch { }
         }
 
         public static string AppBaseDir
@@ -222,6 +246,38 @@ namespace ZapretControl
             }
         }
 
+        private const string AppRunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
+        private const string AppRunName = "ZapretControl";
+
+        public static bool GetAppAutoStart()
+        {
+            try
+            {
+                using (var key = Registry.CurrentUser.OpenSubKey(AppRunKey))
+                {
+                    if (key == null) return false;
+                    return key.GetValue(AppRunName) != null;
+                }
+            }
+            catch { return false; }
+        }
+
+        public static void SetAppAutoStart(bool enabled)
+        {
+            try
+            {
+                using (var key = Registry.CurrentUser.CreateSubKey(AppRunKey))
+                {
+                    if (key == null) return;
+                    if (enabled)
+                        key.SetValue(AppRunName, "\"" + System.Windows.Forms.Application.ExecutablePath + "\"", RegistryValueKind.String);
+                    else
+                        key.DeleteValue(AppRunName, false);
+                }
+            }
+            catch { }
+        }
+
         public static string GetServiceImagePath()
         {
             try
@@ -289,6 +345,8 @@ namespace ZapretControl
 
         public static string DetectInstallDir()
         {
+            if (IsInstallDir(BundledInstallDir)) return BundledInstallDir;
+
             string fromService = InstallDirFromService();
             if (fromService != null) return fromService;
 
@@ -296,7 +354,7 @@ namespace ZapretControl
             if (LoadConfig().TryGetValue("install", out saved) && IsInstallDir(saved))
                 return saved;
 
-            if (IsInstallDir(DefaultInstallDir)) return DefaultInstallDir;
+            if (IsInstallDir(Path.Combine(LocalDir, "zapret"))) return Path.Combine(LocalDir, "zapret");
 
             string user = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             string[] roots = new string[]
@@ -734,13 +792,131 @@ namespace ZapretControl
 
         public static bool TgProxyRunning()
         {
-            try { return Process.GetProcessesByName("TgWsProxy").Length > 0; }
-            catch { return false; }
+            try
+            {
+                if (Process.GetProcessesByName("tgproxy").Length > 0) return true;
+                if (Process.GetProcessesByName("TgWsProxy").Length > 0) return true;
+            }
+            catch { }
+            try { if (TgProxyPortOpen()) return true; } catch { }
+            return false;
+        }
+
+        public static int GetTgProxyPort()
+        {
+            try
+            {
+                if (!File.Exists(TgConfigPath)) return 1443;
+                string text = File.ReadAllText(TgConfigPath);
+                var m = Regex.Match(text, "\"port\"\\s*:\\s*(\\d+)");
+                if (m.Success) { int p; if (int.TryParse(m.Groups[1].Value, out p) && p > 0 && p < 65536) return p; }
+            }
+            catch { }
+            return 1443;
+        }
+
+        public static void SetTgProxyPort(int port)
+        {
+            SetTgConfigInt("port", port);
+        }
+
+        public static string ReadTgConfigText()
+        {
+            try { if (File.Exists(TgConfigPath)) return File.ReadAllText(TgConfigPath, Encoding.UTF8); } catch { }
+            return "{}";
+        }
+
+        public static void WriteTgConfigText(string text)
+        {
+            try
+            {
+                string dir = Path.GetDirectoryName(TgConfigPath);
+                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                File.WriteAllText(TgConfigPath, text, new UTF8Encoding(false));
+            }
+            catch { }
+        }
+
+        public static int GetTgConfigInt(string key, int def)
+        {
+            try
+            {
+                string t = ReadTgConfigText();
+                var m = Regex.Match(t, "\"" + Regex.Escape(key) + "\"\\s*:\\s*(-?\\d+)");
+                if (m.Success) { int v; if (int.TryParse(m.Groups[1].Value, out v)) return v; }
+            }
+            catch { }
+            return def;
+        }
+
+        public static bool GetTgConfigBool(string key, bool def)
+        {
+            try
+            {
+                string t = ReadTgConfigText();
+                var m = Regex.Match(t, "\"" + Regex.Escape(key) + "\"\\s*:\\s*(true|false)", RegexOptions.IgnoreCase);
+                if (m.Success) return m.Groups[1].Value.Equals("true", StringComparison.OrdinalIgnoreCase);
+            }
+            catch { }
+            return def;
+        }
+
+        public static string GetTgConfigString(string key, string def)
+        {
+            try
+            {
+                string t = ReadTgConfigText();
+                var m = Regex.Match(t, "\"" + Regex.Escape(key) + "\"\\s*:\\s*\"([^\"]*)\"");
+                if (m.Success) return m.Groups[1].Value;
+            }
+            catch { }
+            return def;
+        }
+
+        public static void SetTgConfigInt(string key, int value)
+        {
+            string t = ReadTgConfigText();
+            string pat = "\"" + Regex.Escape(key) + "\"\\s*:\\s*-?\\d+";
+            string rep = "\"" + key + "\": " + value;
+            if (Regex.IsMatch(t, pat)) t = Regex.Replace(t, pat, rep);
+            else t = InsertTgConfigField(t, rep);
+            WriteTgConfigText(t);
+        }
+
+        public static void SetTgConfigBool(string key, bool value)
+        {
+            string t = ReadTgConfigText();
+            string pat = "\"" + Regex.Escape(key) + "\"\\s*:\\s*(true|false)";
+            string rep = "\"" + key + "\": " + (value ? "true" : "false");
+            if (Regex.IsMatch(t, pat, RegexOptions.IgnoreCase)) t = Regex.Replace(t, pat, rep, RegexOptions.IgnoreCase);
+            else t = InsertTgConfigField(t, rep);
+            WriteTgConfigText(t);
+        }
+
+        public static void SetTgConfigString(string key, string value)
+        {
+            string t = ReadTgConfigText();
+            string val = (value ?? "").Replace("\\", "\\\\").Replace("\"", "\\\"");
+            string pat = "\"" + Regex.Escape(key) + "\"\\s*:\\s*\"[^\"]*\"";
+            string rep = "\"" + key + "\": \"" + val + "\"";
+            if (Regex.IsMatch(t, pat)) t = Regex.Replace(t, pat, rep);
+            else t = InsertTgConfigField(t, rep);
+            WriteTgConfigText(t);
+        }
+
+        private static string InsertTgConfigField(string text, string field)
+        {
+            if (string.IsNullOrWhiteSpace(text) || text.Trim() == "{}") return "{\r\n  " + field + "\r\n}\r\n";
+            int idx = text.LastIndexOf('}');
+            if (idx <= 0) return text;
+            string before = text.Substring(0, idx).TrimEnd();
+            if (!before.EndsWith(",")) before += ",";
+            return before + "\r\n  " + field + "\r\n}\r\n";
         }
 
         public static bool TgProxyPortOpen()
         {
-            return TcpAlive("127.0.0.1", 1443, 700);
+            return TcpAlive("127.0.0.1", GetTgProxyPort(), 700);
         }
 
         public static string TgConfigPath
@@ -750,13 +926,11 @@ namespace ZapretControl
 
         public static string GetTelegramLink(out int port)
         {
-            port = 1443;
+            port = GetTgProxyPort();
             try
             {
                 if (!File.Exists(TgConfigPath)) return null;
                 string text = File.ReadAllText(TgConfigPath);
-                var portMatch = Regex.Match(text, "\"port\"\\s*:\\s*(\\d+)");
-                if (portMatch.Success) int.TryParse(portMatch.Groups[1].Value, out port);
                 var secretMatch = Regex.Match(text, "\"secret\"\\s*:\\s*\"([^\"]+)\"");
                 if (!secretMatch.Success || secretMatch.Groups[1].Value.Length == 0) return null;
                 string secret = secretMatch.Groups[1].Value;
@@ -804,6 +978,7 @@ namespace ZapretControl
 
         public static void EnsureTgProxy(Action<string> log)
         {
+            MigrateTgProxyExe();
             if (File.Exists(TgProxyExe)) return;
 
             Directory.CreateDirectory(LocalDir);
@@ -832,23 +1007,38 @@ namespace ZapretControl
 
         public static void StartTgProxy()
         {
+            MigrateTgProxyExe();
             if (!File.Exists(TgProxyExe))
-                throw new FileNotFoundException("TgWsProxy.exe не найден.");
-            if (TgProxyRunning()) return;
-            Process.Start(new ProcessStartInfo(TgProxyExe)
+                throw new FileNotFoundException("TgProxy не найден.");
+            if (TgProxyRunning() || TgProxyPortOpen()) return;
+            var psi = new ProcessStartInfo(TgProxyExe);
+            psi.WorkingDirectory = LocalDir;
+            psi.UseShellExecute = false;
+            psi.CreateNoWindow = true;
+            psi.WindowStyle = ProcessWindowStyle.Hidden;
+            try { Process.Start(psi); }
+            catch
             {
-                WorkingDirectory = LocalDir,
-                UseShellExecute = true
-            });
+                psi.UseShellExecute = true;
+                psi.CreateNoWindow = false;
+                psi.WindowStyle = ProcessWindowStyle.Hidden;
+                Process.Start(psi);
+            }
         }
 
         public static void StopTgProxy()
         {
-            foreach (var process in Process.GetProcessesByName("TgWsProxy"))
+            foreach (var name in new string[] { "tgproxy", "TgWsProxy" })
             {
-                try { process.Kill(); }
+                try
+                {
+                    foreach (var process in Process.GetProcessesByName(name))
+                    {
+                        try { process.Kill(); } catch { }
+                        finally { process.Dispose(); }
+                    }
+                }
                 catch { }
-                finally { process.Dispose(); }
             }
         }
 
@@ -896,6 +1086,141 @@ namespace ZapretControl
         {
             try { if (File.Exists(path)) File.Delete(path); }
             catch { }
+        }
+
+        public static string GetGameFilterStatus(string installDir)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(installDir)) return "disabled";
+                string path = Path.Combine(installDir, "utils", "game_filter.enabled");
+                if (!File.Exists(path)) return "disabled";
+                string mode = "all";
+                foreach (var line in File.ReadAllLines(path))
+                {
+                    var t = line.Trim();
+                    if (t.StartsWith("mode=", StringComparison.OrdinalIgnoreCase)) mode = t.Substring(5).Trim().ToLowerInvariant();
+                }
+                if (mode == "tcp") return "tcp";
+                if (mode == "udp") return "udp";
+                if (mode == "disabled") return "disabled";
+                return "all";
+            }
+            catch { return "disabled"; }
+        }
+
+        public static void SetGameFilter(string installDir, string mode)
+        {
+            if (string.IsNullOrEmpty(installDir)) return;
+            string utils = Path.Combine(installDir, "utils");
+            Directory.CreateDirectory(utils);
+            string path = Path.Combine(utils, "game_filter.enabled");
+            if (mode == "disabled")
+            {
+                TryDelete(path);
+                return;
+            }
+            var sb = new StringBuilder();
+            sb.AppendLine("mode=" + mode);
+            if (mode == "all" || mode == "tcp") sb.AppendLine("tcp=1024-65535");
+            if (mode == "all" || mode == "udp") sb.AppendLine("udp=1024-65535");
+            File.WriteAllText(path, sb.ToString(), new UTF8Encoding(false));
+        }
+
+        public static string GetIPSetStatus(string installDir)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(installDir)) return "unknown";
+                string listFile = Path.Combine(installDir, "lists", "ipset-all.txt");
+                if (!File.Exists(listFile)) return "any";
+                var lines = File.ReadAllLines(listFile).Where(l => l.Trim().Length > 0).ToList();
+                if (lines.Count == 0) return "any";
+                if (lines.Count == 1 && lines[0].Trim() == "203.0.113.113/32") return "none";
+                return "loaded";
+            }
+            catch { return "unknown"; }
+        }
+
+        public static void CycleIPSet(string installDir)
+        {
+            if (string.IsNullOrEmpty(installDir)) return;
+            string listFile = Path.Combine(installDir, "lists", "ipset-all.txt");
+            string backup = listFile + ".backup";
+            Directory.CreateDirectory(Path.GetDirectoryName(listFile));
+            string status = GetIPSetStatus(installDir);
+            if (status == "loaded")
+            {
+                try { if (File.Exists(backup)) File.Delete(backup); } catch { }
+                if (File.Exists(listFile)) File.Move(listFile, backup);
+                File.WriteAllText(listFile, "203.0.113.113/32\r\n", new UTF8Encoding(false));
+            }
+            else if (status == "none")
+            {
+                File.WriteAllText(listFile, "", new UTF8Encoding(false));
+            }
+            else
+            {
+                if (File.Exists(backup))
+                {
+                    try { if (File.Exists(listFile)) File.Delete(listFile); } catch { }
+                    File.Move(backup, listFile);
+                }
+                else
+                {
+                    File.WriteAllText(listFile, "203.0.113.113/32\r\n", new UTF8Encoding(false));
+                }
+            }
+        }
+
+        public static bool GetAutoUpdateEnabled(string installDir)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(installDir)) return false;
+                return File.Exists(Path.Combine(installDir, "utils", "check_updates.enabled"));
+            }
+            catch { return false; }
+        }
+
+        public static void SetAutoUpdateEnabled(string installDir, bool enabled)
+        {
+            if (string.IsNullOrEmpty(installDir)) return;
+            string utils = Path.Combine(installDir, "utils");
+            Directory.CreateDirectory(utils);
+            string path = Path.Combine(utils, "check_updates.enabled");
+            if (enabled) File.WriteAllText(path, "ENABLED\r\n", new UTF8Encoding(false));
+            else TryDelete(path);
+        }
+
+        public static List<string> GetFakeBinFiles(string installDir)
+        {
+            var list = new List<string>();
+            try
+            {
+                if (string.IsNullOrEmpty(installDir)) return list;
+                string bin = Path.Combine(installDir, "bin");
+                if (!Directory.Exists(bin)) return list;
+                foreach (var f in Directory.GetFiles(bin, "*.bin"))
+                {
+                    string name = Path.GetFileNameWithoutExtension(f);
+                    if (!name.StartsWith("ACTIVE_", StringComparison.OrdinalIgnoreCase))
+                        list.Add(Path.GetFileName(f));
+                }
+                list.Sort(StringComparer.OrdinalIgnoreCase);
+            }
+            catch { }
+            return list;
+        }
+
+        public static void SetActiveFake(string installDir, string fileName, bool forDiscord)
+        {
+            if (string.IsNullOrEmpty(installDir) || string.IsNullOrEmpty(fileName)) return;
+            string bin = Path.Combine(installDir, "bin");
+            string src = Path.Combine(bin, fileName);
+            if (!File.Exists(src)) return;
+            string dst = Path.Combine(bin, forDiscord ? "ACTIVE_DISCORD_UDP.bin" : "ACTIVE_GAME_UDP.bin");
+            File.Copy(src, dst, true);
         }
 
         public static int SelfTest()

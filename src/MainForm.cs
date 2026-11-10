@@ -58,6 +58,12 @@ namespace ZapretControl
         private Label _tgServiceLabel;
         private Button _tgStart;
         private Button _tgStop;
+        private TextBox _tgPortBox;
+        private Panel _settingsCard;
+        private ComboBox _gameFilterCombo;
+        private ComboBox _ipsetCombo;
+        private ComboBox _autoUpdateCombo;
+        private ToggleSwitch _appAutoToggle;
         private RichTextBox _log;
         private NotifyIcon _tray;
         private Timer _refreshTimer;
@@ -90,7 +96,7 @@ namespace ZapretControl
         private void BuildUi()
         {
             Text = "Zapret Control";
-            ClientSize = new Size(900, 800);
+            ClientSize = new Size(900, 958);
             BackColor = Bg;
             ForeColor = TextMain;
             Font = new Font("Segoe UI", 9f);
@@ -111,6 +117,7 @@ namespace ZapretControl
             BuildServiceCard();
             BuildStrategyCard();
             BuildChecksCard();
+            BuildSettingsCard();
             BuildTelegramCard();
             BuildLog();
         }
@@ -163,23 +170,23 @@ namespace ZapretControl
 
         private void BuildChecksCard()
         {
-            var card = CreateCard(26, 338, 848, 212);
+            var card = CreateCard(26, 338, 848, 226);
             _checksCard = card;
 
             MakeLabel(card, "ПРОВЕРКА ДОСТУПА", 20, 12, 8f, true, TextDim);
-
-            var checkButton = MakeButton(card, "Проверить", 664, 8, 104, 28, false);
-            checkButton.Click += delegate { RunChecks(); };
 
             _checksToggle = MakeButton(card, "▲", 788, 8, 40, 28, false);
             _checksToggle.Font = new Font("Segoe UI", 7.5f);
             _checksToggle.Click += delegate { SetChecksExpanded(!_checksExpanded); };
 
             _ytDot = AddCheckRow(card, 24, 40, "YouTube", out _ytState);
-            _dcDot = AddCheckRow(card, 24, 74, "Discord", out _dcState);
-            _rbDot = AddCheckRow(card, 24, 108, "Roblox", out _rbState);
-            _scDot = AddCheckRow(card, 24, 142, "SoundCloud", out _scState);
-            _tgDot = AddCheckRow(card, 24, 176, "Telegram", out _tgState);
+            _dcDot = AddCheckRow(card, 24, 70, "Discord", out _dcState);
+            _rbDot = AddCheckRow(card, 24, 100, "Roblox", out _rbState);
+            _scDot = AddCheckRow(card, 24, 130, "SoundCloud", out _scState);
+            _tgDot = AddCheckRow(card, 24, 160, "Telegram", out _tgState);
+
+            var checkButton = MakeButton(card, "Проверить", 24, 186, 120, 30, false);
+            checkButton.Click += delegate { RunChecks(); };
 
             Controls.Add(card);
         }
@@ -201,17 +208,18 @@ namespace ZapretControl
             _checksExpanded = expanded;
             int shift = expanded ? 0 : 160;
 
-            _checksCard.Height = expanded ? 212 : 52;
+            _checksCard.Height = expanded ? 226 : 52;
 
             foreach (Control control in _checksCard.Controls)
             {
                 if (control.Top >= 30) control.Visible = expanded;
             }
 
-            _tgCard.Top = 562 - shift;
-            _logTitle.Top = 674 - shift;
-            _logPanel.Top = 694 - shift;
-            ClientSize = new Size(900, 800 - shift);
+            _settingsCard.Top = 562 - shift;
+            _tgCard.Top = 710 - shift;
+            _logTitle.Top = 840 - shift;
+            _logPanel.Top = 860 - shift;
+            ClientSize = new Size(900, 958 - shift);
 
             _checksToggle.Text = expanded ? "▲" : "▼";
         }
@@ -228,37 +236,100 @@ namespace ZapretControl
             return dot;
         }
 
+        private void BuildSettingsCard()
+        {
+            var card = CreateCard(26, 562, 848, 136);
+            _settingsCard = card;
+
+            MakeLabel(card, "НАСТРОЙКИ", 20, 12, 8f, true, TextDim);
+
+            MakeLabel(card, "Game Filter", 24, 42, 9.5f, true, TextMain);
+            _gameFilterCombo = new ComboBox();
+            _gameFilterCombo.DropDownStyle = ComboBoxStyle.DropDownList;
+            _gameFilterCombo.FlatStyle = FlatStyle.Flat;
+            _gameFilterCombo.BackColor = Color.FromArgb(34, 36, 45);
+            _gameFilterCombo.ForeColor = TextMain;
+            _gameFilterCombo.Items.AddRange(new object[] { "disabled", "all", "tcp", "udp" });
+            _gameFilterCombo.SetBounds(120, 38, 130, 26);
+            card.Controls.Add(_gameFilterCombo);
+
+            MakeLabel(card, "IPSet Filter", 282, 42, 9.5f, true, TextMain);
+            _ipsetCombo = new ComboBox();
+            _ipsetCombo.DropDownStyle = ComboBoxStyle.DropDownList;
+            _ipsetCombo.FlatStyle = FlatStyle.Flat;
+            _ipsetCombo.BackColor = Color.FromArgb(34, 36, 45);
+            _ipsetCombo.ForeColor = TextMain;
+            _ipsetCombo.Items.AddRange(new object[] { "loaded", "none", "any" });
+            _ipsetCombo.SetBounds(374, 38, 130, 26);
+            card.Controls.Add(_ipsetCombo);
+
+            MakeLabel(card, "Auto-Update", 536, 42, 9.5f, true, TextMain);
+            _autoUpdateCombo = new ComboBox();
+            _autoUpdateCombo.DropDownStyle = ComboBoxStyle.DropDownList;
+            _autoUpdateCombo.FlatStyle = FlatStyle.Flat;
+            _autoUpdateCombo.BackColor = Color.FromArgb(34, 36, 45);
+            _autoUpdateCombo.ForeColor = TextMain;
+            _autoUpdateCombo.Items.AddRange(new object[] { "disabled", "enabled" });
+            _autoUpdateCombo.SetBounds(636, 38, 130, 26);
+            card.Controls.Add(_autoUpdateCombo);
+
+            MakeLabel(card, "Автозапуск приложения", 430, 92, 9.5f, true, TextMain);
+            _appAutoToggle = new ToggleSwitch();
+            _appAutoToggle.SetBounds(596, 86, 56, 28);
+            card.Controls.Add(_appAutoToggle);
+
+            var saveBtn = MakeButton(card, "Сохранить", 24, 84, 150, 34, true);
+            saveBtn.Click += delegate { SaveSettings(); };
+
+            var fakeBtn = MakeButton(card, "Replace fakes", 186, 84, 150, 34, false);
+            fakeBtn.Click += delegate { ReplaceActiveFakes(); };
+
+            Controls.Add(card);
+        }
         private void BuildTelegramCard()
         {
-            var card = CreateCard(26, 562, 848, 96);
+            var card = CreateCard(26, 710, 848, 114);
             _tgCard = card;
 
-            MakeLabel(card, "TELEGRAM", 20, 12, 8f, true, TextDim);
+            MakeLabel(card, "TELEGRAM / TgProxy", 20, 12, 8f, true, TextDim);
 
             _tgServiceDot = new Dot();
-            _tgServiceDot.SetBounds(24, 46, 12, 12);
+            _tgServiceDot.SetBounds(24, 42, 12, 12);
             card.Controls.Add(_tgServiceDot);
 
-            _tgServiceLabel = MakeLabel(card, "TgProxy выключен", 44, 39, 10f, true, TextMain);
+            _tgServiceLabel = MakeLabel(card, "TgProxy выключен", 44, 35, 10f, true, TextMain);
 
-            _tgStart = MakeButton(card, "Запустить", 490, 30, 120, 32, false);
+            MakeLabel(card, "Порт", 24, 74, 9f, false, TextDim);
+            _tgPortBox = new TextBox();
+            _tgPortBox.BorderStyle = BorderStyle.FixedSingle;
+            _tgPortBox.BackColor = Color.FromArgb(34, 36, 45);
+            _tgPortBox.ForeColor = TextMain;
+            _tgPortBox.Font = new Font("Segoe UI", 9f);
+            _tgPortBox.SetBounds(62, 70, 70, 24);
+            _tgPortBox.Text = Core.GetTgProxyPort().ToString();
+            card.Controls.Add(_tgPortBox);
+            var portSave = MakeButton(card, "OK", 138, 68, 44, 28, false);
+            portSave.Click += delegate { SaveTgPort(); };
+            var tgSettings = MakeButton(card, "Настройки", 192, 68, 110, 28, false);
+            tgSettings.Click += delegate { ShowTgProxySettings(); };
+
+            _tgStart = MakeButton(card, "Запустить", 490, 26, 120, 34, false);
             _tgStart.Click += delegate { StartTelegramProxy(true); };
 
-            var connect = MakeButton(card, "Подключить Telegram", 620, 30, 150, 32, true);
+            var connect = MakeButton(card, "Подключить Telegram", 620, 26, 150, 34, true);
             connect.Click += delegate { ConnectTelegram(); };
 
-            _tgStop = MakeButton(card, "Стоп", 780, 30, 48, 32, false);
+            _tgStop = MakeButton(card, "Стоп", 780, 26, 48, 34, false);
             _tgStop.Click += delegate { StopTelegramProxy(); };
 
             Controls.Add(card);
         }
-
         private void BuildLog()
         {
-            _logTitle = MakeLabel(this, "ЖУРНАЛ", 30, 674, 8f, true, TextDim);
+            _logTitle = MakeLabel(this, "ЖУРНАЛ", 30, 840, 8f, true, TextDim);
 
             var panel = new Panel();
-            panel.SetBounds(26, 694, 848, 86);
+            panel.SetBounds(26, 860, 848, 86);
             _logPanel = panel;
             panel.BackColor = Color.FromArgb(13, 14, 18);
             panel.Paint += delegate(object sender, PaintEventArgs e)
@@ -327,7 +398,7 @@ namespace ZapretControl
             button.FlatAppearance.MouseDownBackColor = accent ? Color.FromArgb(82, 66, 132) : Color.FromArgb(52, 55, 66);
             button.Cursor = Cursors.Hand;
             button.SetBounds(x, y, width, height);
-            button.Resize += delegate { Ui.RoundRegion(button, 10); };
+            button.Resize += delegate { Ui.RoundRegion(button, 14); };
             parent.Controls.Add(button);
             return button;
         }
@@ -573,14 +644,16 @@ namespace ZapretControl
 
             bool tgRunning = Core.TgProxyRunning();
             bool tgPort = Core.TgProxyPortOpen();
+            bool tgActive = tgRunning || tgPort;
+            int tgP = Core.GetTgProxyPort();
 
-            if (tgRunning && tgPort)
+            if (tgPort)
             {
                 _tgServiceDot.Color = Green;
-                _tgServiceLabel.Text = "TgProxy · 127.0.0.1:1443";
+                _tgServiceLabel.Text = "TgProxy работает · 127.0.0.1:" + tgP;
                 _tgServiceLabel.ForeColor = TextMain;
             }
-            else if (tgRunning)
+            else if (tgActive)
             {
                 _tgServiceDot.Color = Yellow;
                 _tgServiceLabel.Text = "TgProxy запускается…";
@@ -596,12 +669,14 @@ namespace ZapretControl
             if (_tgStart != null)
             {
                 _tgStart.Text = File.Exists(Core.TgProxyExe) ? "Запустить" : "Установить";
-                _tgStart.Enabled = !tgRunning && !_busy;
+                _tgStart.Enabled = !tgActive && !_busy;
             }
-            if (_tgStop != null) _tgStop.Enabled = tgRunning && !_busy;
+            if (_tgStop != null) _tgStop.Enabled = tgActive && !_busy;
 
             if (string.IsNullOrEmpty(strategyName))
                 _subLabel.Text = "Служба zapret · стратегия не определена";
+
+            RefreshSettings();
         }
 
         private void ToggleService()
@@ -609,15 +684,8 @@ namespace ZapretControl
             if (_dev) { Log("Тестовый режим: управление службой отключено."); return; }
             if (_busy) return;
 
-            SvcState state = Core.GetServiceState();
-            if (state == SvcState.NotInstalled)
-            {
-                if (_installDir == null) InstallZapret();
-                else InstallServiceOnly();
-                return;
-            }
-
-            bool starting = state != SvcState.Running;
+            bool running = Core.GetServiceState() == SvcState.Running;
+            bool starting = !running;
             SetBusy(true);
             Log(starting ? "Запуск службы zapret…" : "Остановка службы zapret…");
 
@@ -625,13 +693,14 @@ namespace ZapretControl
             {
                 string error;
                 bool ok = starting ? Core.StartService(out error) : Core.StopService(out error);
+
                 BeginInvoke(new Action(delegate
                 {
                     SetBusy(false);
                     RefreshState();
                     if (ok)
                     {
-                        Log(starting ? "Включено." : "Выключено.");
+                        Log(starting ? "Запущено." : "Выключено.");
                         RunChecks();
                     }
                     else
@@ -876,6 +945,13 @@ namespace ZapretControl
                         RefreshState();
                     }));
                 });
+                return;
+            }
+
+            if (Core.TgProxyPortOpen() || Core.TgProxyRunning())
+            {
+                Log("TgProxy уже запущен.");
+                RefreshState();
                 return;
             }
 
@@ -1130,5 +1206,216 @@ namespace ZapretControl
 
             base.OnFormClosing(e);
         }
+
+        private void RefreshSettings()
+        {
+            if (_installDir == null || _gameFilterCombo == null) return;
+            try
+            {
+                string gf = Core.GetGameFilterStatus(_installDir);
+                _gameFilterCombo.SelectedItem = gf;
+                if (_gameFilterCombo.SelectedIndex < 0) _gameFilterCombo.SelectedIndex = 0;
+                string ip = Core.GetIPSetStatus(_installDir);
+                _ipsetCombo.SelectedItem = ip;
+                if (_ipsetCombo.SelectedIndex < 0) _ipsetCombo.SelectedIndex = 0;
+                _autoUpdateCombo.SelectedItem = Core.GetAutoUpdateEnabled(_installDir) ? "enabled" : "disabled";
+                if (_appAutoToggle != null)
+                    _appAutoToggle.Checked = Core.GetAppAutoStart();
+            }
+            catch { }
+        }
+
+        private void SaveSettings()
+        {
+            if (_installDir == null) return;
+            try
+            {
+                string gf = _gameFilterCombo.SelectedItem != null ? _gameFilterCombo.SelectedItem.ToString() : "disabled";
+                Core.SetGameFilter(_installDir, gf);
+                string ip = _ipsetCombo.SelectedItem != null ? _ipsetCombo.SelectedItem.ToString() : "loaded";
+                string curIp = Core.GetIPSetStatus(_installDir);
+                int guard = 0;
+                while (curIp != ip && guard++ < 4) { Core.CycleIPSet(_installDir); curIp = Core.GetIPSetStatus(_installDir); }
+                bool au = _autoUpdateCombo.SelectedItem != null && _autoUpdateCombo.SelectedItem.ToString() == "enabled";
+                Core.SetAutoUpdateEnabled(_installDir, au);
+                bool appAuto = _appAutoToggle != null && _appAutoToggle.Checked;
+                Core.SetAppAutoStart(appAuto);
+                Log("Настройки сохранены.");
+                RefreshSettings();
+                ApplyCurrentStrategySilent();
+            }
+            catch (Exception ex) { Log("Ошибка сохранения: " + ex.Message); }
+        }
+
+        private void ApplyCurrentStrategySilent()
+        {
+            if (_dev || _busy || _installDir == null) return;
+            int index = _strategySelector != null ? _strategySelector.SelectedIndex : -1;
+            if (index < 0 || index >= _strategies.Count) return;
+            StrategyInfo strategy = _strategies[index];
+            SetBusy(true);
+            Log("Применение стратегии: " + strategy.Name);
+            System.Threading.Tasks.Task.Factory.StartNew(delegate
+            {
+                string error;
+                bool ok = Core.ApplyStrategy(_installDir, strategy, Log, out error);
+                BeginInvoke(new Action(delegate
+                {
+                    SetBusy(false);
+                    RefreshState();
+                    if (ok) { Log("Готово. Стратегия: " + strategy.Name); RunChecks(); }
+                    else { Log("Ошибка стратегии: " + error); }
+                }));
+            });
+        }
+
+
+        private void ShowTgProxySettings()
+        {
+            using (var dlg = new Form())
+            {
+                dlg.Text = "Настройки TgProxy";
+                dlg.ClientSize = new Size(500, 430);
+                dlg.FormBorderStyle = FormBorderStyle.FixedDialog;
+                dlg.MaximizeBox = false;
+                dlg.MinimizeBox = false;
+                dlg.StartPosition = FormStartPosition.CenterParent;
+                dlg.BackColor = Bg;
+                dlg.ForeColor = TextMain;
+                dlg.Font = new Font("Segoe UI", 9f);
+
+                int y = 14;
+                Action<string> section = (title) => {
+                    var l = new Label(); l.Text = title; l.Font = new Font("Segoe UI Semibold", 8.5f); l.ForeColor = TextDim; l.Location = new Point(16, y); l.AutoSize = true; dlg.Controls.Add(l);
+                    y += 22;
+                };
+                Func<string,int,TextBox> field = (label, w) => {
+                    var l = new Label(); l.Text = label; l.Location = new Point(28, y + 3); l.AutoSize = true; l.ForeColor = TextMain; dlg.Controls.Add(l);
+                    var tb = new TextBox(); tb.BorderStyle = BorderStyle.FixedSingle; tb.BackColor = Color.FromArgb(34,36,45); tb.ForeColor = TextMain; tb.SetBounds(170, y, w, 24); dlg.Controls.Add(tb);
+                    return tb;
+                };
+                Func<string,int,CheckBox> check = (label, x) => {
+                    var cb = new CheckBox(); cb.Text = label; cb.Location = new Point(x, y); cb.AutoSize = true; cb.ForeColor = TextMain; dlg.Controls.Add(cb);
+                    return cb;
+                };
+
+                section("Подключение");
+                var portTb = field("Порт", 90); portTb.Text = Core.GetTgConfigInt("port", 1443).ToString();
+                var hostLbl = new Label(); hostLbl.Text = "Host"; hostLbl.Location = new Point(290, y + 3); hostLbl.AutoSize = true; hostLbl.ForeColor = TextMain; dlg.Controls.Add(hostLbl);
+                var hostTb = new TextBox(); hostTb.BorderStyle = BorderStyle.FixedSingle; hostTb.BackColor = Color.FromArgb(34,36,45); hostTb.ForeColor = TextMain; hostTb.SetBounds(330, y, 140, 24); hostTb.Text = Core.GetTgConfigString("host", "127.0.0.1"); dlg.Controls.Add(hostTb);
+                y += 34;
+
+                section("Производительность");
+                var bufTb = field("Буфер (КБ)", 90); bufTb.Text = Core.GetTgConfigInt("buf_kb", 256).ToString();
+                var poolLbl = new Label(); poolLbl.Text = "Пул"; poolLbl.Location = new Point(290, y + 3); poolLbl.AutoSize = true; poolLbl.ForeColor = TextMain; dlg.Controls.Add(poolLbl);
+                var poolTb = new TextBox(); poolTb.BorderStyle = BorderStyle.FixedSingle; poolTb.BackColor = Color.FromArgb(34,36,45); poolTb.ForeColor = TextMain; poolTb.SetBounds(330, y, 70, 24); poolTb.Text = Core.GetTgConfigInt("pool_size", 4).ToString(); dlg.Controls.Add(poolTb);
+                y += 30;
+                var logTb = field("Лог (МБ)", 90); logTb.Text = Core.GetTgConfigInt("log_max_mb", 5).ToString();
+                y += 34;
+
+                section("Режимы");
+                var cf = check("cfproxy", 28); cf.Checked = Core.GetTgConfigBool("cfproxy", true);
+                var h2 = check("h2", 170); h2.Checked = Core.GetTgConfigBool("h2", true);
+                var nosec = check("no_secure", 290); nosec.Checked = Core.GetTgConfigBool("no_secure", false);
+                y += 28;
+                var ftdc = check("force_test_dc", 28); ftdc.Checked = Core.GetTgConfigBool("force_test_dc", false);
+                y += 34;
+
+                section("Дополнительно");
+                var verbose = check("verbose", 28); verbose.Checked = Core.GetTgConfigBool("verbose", false);
+                var cfu = check("cfproxy_user_domain", 170); cfu.Checked = Core.GetTgConfigBool("cfproxy_user_domain_enabled", false);
+                var cfw = check("cfproxy_worker", 350); cfw.Checked = Core.GetTgConfigBool("cfproxy_worker_enabled", false);
+
+                var save = MakeButton(dlg, "Сохранить", 250, 382, 120, 34, true);
+                var cancel = MakeButton(dlg, "Отмена", 380, 382, 100, 34, false);
+                save.Click += delegate {
+                    int port, lmb, bk, ps;
+                    if (!int.TryParse(portTb.Text.Trim(), out port) || port < 1 || port > 65535) port = Core.GetTgConfigInt("port", 1443);
+                    if (!int.TryParse(logTb.Text.Trim(), out lmb) || lmb < 1) lmb = 5;
+                    if (!int.TryParse(bufTb.Text.Trim(), out bk) || bk < 1) bk = 256;
+                    if (!int.TryParse(poolTb.Text.Trim(), out ps) || ps < 1) ps = 4;
+                    bool running = Core.TgProxyRunning();
+                    if (running) { try { Core.StopTgProxy(); } catch { } }
+                    Core.SetTgConfigInt("port", port);
+                    Core.SetTgConfigString("host", (hostTb.Text ?? "127.0.0.1").Trim());
+                    Core.SetTgConfigInt("log_max_mb", lmb);
+                    Core.SetTgConfigInt("buf_kb", bk);
+                    Core.SetTgConfigInt("pool_size", ps);
+                    Core.SetTgConfigBool("verbose", verbose.Checked);
+                    Core.SetTgConfigBool("cfproxy", cf.Checked);
+                    Core.SetTgConfigBool("h2", h2.Checked);
+                    Core.SetTgConfigBool("no_secure", nosec.Checked);
+                    Core.SetTgConfigBool("force_test_dc", ftdc.Checked);
+                    Core.SetTgConfigBool("cfproxy_user_domain_enabled", cfu.Checked);
+                    Core.SetTgConfigBool("cfproxy_worker_enabled", cfw.Checked);
+                    if (_tgPortBox != null) _tgPortBox.Text = port.ToString();
+                    Log("Настройки TgProxy сохранены.");
+                    if (running)
+                    {
+                        try { Core.StartTgProxy(); Log("TgProxy перезапущен."); } catch (Exception ex) { Log("Ошибка запуска TgProxy: " + ex.Message); }
+                    }
+                    dlg.DialogResult = DialogResult.OK;
+                    dlg.Close();
+                };
+                cancel.Click += delegate { dlg.DialogResult = DialogResult.Cancel; dlg.Close(); };
+                dlg.AcceptButton = save; dlg.CancelButton = cancel;
+                dlg.ShowDialog(this);
+                RefreshState();
+            }
+        }
+        private void SaveTgPort()
+        {
+            int port;
+            if (!int.TryParse((_tgPortBox.Text ?? "").Trim(), out port) || port < 1 || port > 65535)
+            {
+                Log("Неверный порт TgProxy.");
+                _tgPortBox.Text = Core.GetTgProxyPort().ToString();
+                return;
+            }
+            bool running = Core.TgProxyRunning();
+            if (running) { try { Core.StopTgProxy(); } catch { } }
+            Core.SetTgProxyPort(port);
+            Log("Порт TgProxy: " + port);
+            if (running)
+            {
+                try { Core.StartTgProxy(); Log("TgProxy перезапущен."); } catch (Exception ex) { Log("Ошибка запуска TgProxy: " + ex.Message); }
+            }
+            RefreshState();
+        }
+
+        private void ReplaceActiveFakes()
+        {
+            if (_installDir == null) return;
+            var files = Core.GetFakeBinFiles(_installDir);
+            if (files.Count == 0) { Log("Нет .bin файлов для замены."); return; }
+            using (var dlg = new Form())
+            {
+                dlg.Text = "Replace active fakes";
+                dlg.ClientSize = new Size(420, 160);
+                dlg.FormBorderStyle = FormBorderStyle.FixedDialog;
+                dlg.MaximizeBox = false;
+                dlg.MinimizeBox = false;
+                dlg.StartPosition = FormStartPosition.CenterParent;
+                dlg.BackColor = Bg; dlg.ForeColor = TextMain;
+                var l1 = new Label(); l1.Text = "Discord fake:"; l1.Location = new Point(12, 18); l1.AutoSize = true; l1.ForeColor = TextMain; dlg.Controls.Add(l1);
+                var cb1 = new ComboBox(); cb1.DropDownStyle = ComboBoxStyle.DropDownList; cb1.SetBounds(110, 14, 290, 24); foreach (var f in files) cb1.Items.Add(f); if (cb1.Items.Count > 0) cb1.SelectedIndex = 0; dlg.Controls.Add(cb1);
+                var l2 = new Label(); l2.Text = "Game fake:"; l2.Location = new Point(12, 58); l2.AutoSize = true; l2.ForeColor = TextMain; dlg.Controls.Add(l2);
+                var cb2 = new ComboBox(); cb2.DropDownStyle = ComboBoxStyle.DropDownList; cb2.SetBounds(110, 54, 290, 24); foreach (var f in files) cb2.Items.Add(f); if (cb2.Items.Count > 0) cb2.SelectedIndex = 0; dlg.Controls.Add(cb2);
+                var ok = new Button(); ok.Text = "OK"; ok.SetBounds(220, 110, 80, 30); ok.DialogResult = DialogResult.OK; dlg.Controls.Add(ok);
+                var cancel = new Button(); cancel.Text = "Отмена"; cancel.SetBounds(310, 110, 80, 30); cancel.DialogResult = DialogResult.Cancel; dlg.Controls.Add(cancel);
+                dlg.AcceptButton = ok; dlg.CancelButton = cancel;
+                if (dlg.ShowDialog(this) == DialogResult.OK)
+                {
+                    try
+                    {
+                        if (cb1.SelectedItem != null) Core.SetActiveFake(_installDir, cb1.SelectedItem.ToString(), true);
+                        if (cb2.SelectedItem != null) Core.SetActiveFake(_installDir, cb2.SelectedItem.ToString(), false);
+                        Log("Active fakes обновлены. Нажмите «Применить».");
+                    }
+                    catch (Exception ex) { Log("Replace fakes: " + ex.Message); }
+                }
+            }
+        }
+
     }
 }
