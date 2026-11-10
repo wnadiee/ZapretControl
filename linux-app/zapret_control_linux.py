@@ -260,6 +260,7 @@ class App(tk.Tk):
         self.au.place(x=636, y=38, width=130); self.au.set("disabled")
         self.lbl(c, "Автозапуск приложения", 430, 92, 9, True)
         self.app_auto = Toggle(c, 596, 86, os.path.exists(AUTOSTART), self.on_app_auto)
+        self.btn(c, "Выбрать базу", 700, 84, 130, 34, self.choose_base)
         self.btn(c, "Сохранить", 24, 84, 150, 34, self.save_settings, accent=True)
         self.btn(c, "Replace fakes", 186, 84, 150, 34, self.replace_fakes)
 
@@ -373,8 +374,12 @@ class App(tk.Tk):
         if not os.path.exists(sh):
             self.log("База zapret не найдена. Укажите путь/установите базу."); return
         def work():
+            cmd = ["bash", sh] + args
             self.log("$ bash service.sh " + " ".join(args))
-            c,o = run_cmd(["bash", sh]+args, cwd=os.path.dirname(sh))
+            c,o = run_cmd(cmd, cwd=os.path.dirname(sh))
+            if c != 0 and os.geteuid() != 0 and shutil.which("pkexec"):
+                self.log("Повтор с правами администратора (pkexec)...")
+                c,o = run_cmd(["pkexec", "bash", sh] + args, cwd=os.path.dirname(sh))
             self.log((o.strip() or f"Код {c}")[:4000])
             self.after(0, self.refresh_state)
             if after: self.after(0, after)
@@ -387,9 +392,17 @@ class App(tk.Tk):
     def open_folder(self):
         d = self.base_path()
         if not os.path.isdir(d):
-            self.install_base(); return
+            if messagebox.askyesno(APP, "База zapret не найдена.\nСкачать автоматически?\n\n«Нет» — выбрать существующую папку."):
+                self.install_base()
+            else:
+                picked = filedialog.askdirectory(title="Выберите папку zapret")
+                if picked:
+                    self.base_dir = picked; self.state['base_dir']=picked; save_state(self.state); self.refresh_all()
+            return
         try: subprocess.Popen(['xdg-open', d])
-        except Exception: subprocess.Popen(['gio','open',d])
+        except Exception:
+            try: subprocess.Popen(['gio','open',d])
+            except Exception as e: self.log(str(e))
 
     def install_base(self):
         dest = os.path.join(DATA, 'base')
@@ -446,6 +459,12 @@ class App(tk.Tk):
         self.ipset.set(self._read_conf_key('ipset') or 'loaded')
         self.au.set(self._read_conf_key('autoupdate') or 'disabled')
 
+    def choose_base(self):
+        picked = filedialog.askdirectory(title="Выберите папку zapret", initialdir=os.path.dirname(self.base_path()) or DATA)
+        if picked:
+            self.base_dir = picked; self.state['base_dir']=picked; save_state(self.state)
+            self.log("Папка базы: " + picked); self.refresh_all()
+
     def replace_fakes(self): self.log('Replace fakes: используйте инструменты базы zapret при необходимости.')
 
     def on_svc_auto(self, v): self.log('Автозапуск службы: настройте через управление сервисом в базе zapret.')
@@ -498,7 +517,15 @@ class App(tk.Tk):
         with open(TG_CONF,'w',encoding='utf-8') as f: json.dump(d,f,indent=2)
         self.log(f'Порт TgProxy: {p}')
 
-    def tg_settings(self): messagebox.showinfo(APP, f'Конфиг TgProxy:\n{TG_CONF}')
+    def tg_settings(self):
+        ensure_tg_conf()
+        try:
+            subprocess.Popen(['xdg-open', TG_CONF])
+        except Exception:
+            try:
+                subprocess.Popen(['gio','open', TG_CONF])
+            except Exception:
+                messagebox.showinfo(APP, f'Конфиг TgProxy:\n{TG_CONF}')
     def connect_tg(self):
         if not port_open(tg_port()): self.log('Сначала запустите TgProxy.'); return
         p=tg_port(); url=f'tg://proxy?server=127.0.0.1&port={p}&type=socks5'
