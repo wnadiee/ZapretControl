@@ -180,8 +180,11 @@ class App(tk.Tk):
 
     def _build(self):
         tk.Label(self, text="ZAPRET", bg=BG, fg=TEXT, font=("Segoe UI", 24, "bold")).place(x=26, y=8)
-        self.pill = tk.Label(self, text="● неактивен", bg="#1E2028", fg=DIM, font=("Segoe UI", 10, "bold"), padx=16, pady=8)
+        self.pill = tk.Label(self, text="ВЫКЛЮЧЕН", bg="#20222A", fg="#969AA5", font=("Segoe UI Semibold", 9, "bold"), padx=16, pady=8)
         self.pill.place(x=692, y=14, width=182, height=44)
+        self._pill_dot = tk.Canvas(self, width=10, height=10, bg="#20222A", highlightthickness=0)
+        self._pill_dot.place(x=708, y=31)
+        self._draw_pill_dot(False)
 
         self._service_card()
         self._strategy_card()
@@ -197,27 +200,36 @@ class App(tk.Tk):
         self.power.place(x=20, y=34)
         self.power.bind("<Button-1>", lambda e: self.toggle_service())
         self._draw_power(False)
-        self.state_lbl = self.lbl(c, "Неактивен", 114, 22, 15, True)
+        self.state_lbl = self.lbl(c, "Выключен", 114, 22, 15, True)
         self.sub_lbl = self.lbl(c, "Служба zapret", 116, 54, 9, False, DIM)
         self.btn(c, "Перезапустить", 560, 22, 150, 32, self.restart_service)
-        self.btn(c, "Папка", 720, 22, 108, 32, self.open_folder)
+        self.folder_btn = self.btn(c, "Папка", 720, 22, 108, 32, self.open_folder)
         self.lbl(c, "Автозапуск службы", 560, 78, 9, False, DIM)
         self.svc_auto = Toggle(c, 784, 74, False, self.on_svc_auto)
 
     def _draw_power(self, on):
         cv = self.power; cv.delete("all")
         col = GREEN if on else "#3E424E"
-        cv.create_oval(4, 4, 68, 68, fill=col, outline=col)
+        cv.create_oval(0, 0, 71, 71, fill=col, outline=col)
+        cv.create_oval(5, 5, 67, 67, fill=col, outline=col)
         cv.create_arc(23, 23, 49, 49, start=-55, extent=290, style="arc", outline="white", width=4)
         cv.create_line(36, 17, 36, 34, fill="white", width=4, capstyle="round")
+
+    def _draw_pill_dot(self, on):
+        self._pill_dot.delete("all")
+        col = GREEN if on else "#787C88"
+        bg = "#203C2D" if on else "#20222A"
+        self.pill.configure(bg=bg)
+        self._pill_dot.configure(bg=bg)
+        self._pill_dot.create_oval(0, 0, 10, 10, fill=col, outline=col)
 
     def _strategy_card(self):
         c = Card(self, 26, 230, 848, 96)
         self.lbl(c, "СТРАТЕГИЯ", 20, 12, 8, True, DIM)
         self.strategy_var = tk.StringVar()
-        self.strategy_cb = ttk.Combobox(c, textvariable=self.strategy_var, state="readonly", width=52)
-        self.strategy_cb.place(x=18, y=36, width=540, height=30)
-        self.btn(c, "Применить", 572, 34, 150, 34, self.apply_strategy, accent=True)
+        self.strategy_cb = ttk.Combobox(c, textvariable=self.strategy_var, state="readonly")
+        self.strategy_cb.place(x=18, y=34, width=540, height=34)
+        self.apply_btn = self.btn(c, "Применить", 572, 34, 150, 34, self.apply_strategy, accent=True)
 
     def _checks_card(self):
         c = Card(self, 26, 338, 848, 226)
@@ -228,8 +240,8 @@ class App(tk.Tk):
         names = [("YouTube", 40), ("Discord", 70), ("Roblox", 100), ("SoundCloud", 130), ("Telegram", 160)]
         for name, y in names:
             d = Dot(c, 24, y+4)
-            self.lbl(c, name, 44, y-2, 10, True, TEXT)
-            st = self.lbl(c, "Проверка…", 200, y-1, 9, False, DIM)
+            self.lbl(c, name, 44, y-3, 10, True, TEXT)
+            st = self.lbl(c, "проверка…", 200, y-2, 9, False, DIM)
             self.check_rows.append((name, d, st, y))
         self.btn(c, "Проверить", 24, 186, 120, 30, self.run_checks)
 
@@ -259,12 +271,12 @@ class App(tk.Tk):
         self.tg_status = self.lbl(c, "TgProxy выключен", 44, 35, 10, True)
         self.lbl(c, "Порт", 24, 74, 9, False, DIM)
         self.tg_port_var = tk.StringVar(value=str(tg_port()))
-        tk.Entry(c, textvariable=self.tg_port_var, bg="#22242D", fg=TEXT, insertbackground=TEXT, relief="flat", width=6).place(x=62, y=70, width=70, height=24)
+        tk.Entry(c, textvariable=self.tg_port_var, bg="#22242D", fg=TEXT, insertbackground=TEXT, relief="flat").place(x=62, y=70, width=70, height=24)
         self.btn(c, "OK", 138, 68, 44, 28, self.save_tg_port)
         self.btn(c, "Настройки", 192, 68, 110, 28, self.tg_settings)
-        self.btn(c, "Запустить", 490, 26, 120, 34, self.start_tg)
+        self.tg_start = self.btn(c, "Запустить", 490, 26, 120, 34, self.start_tg)
         self.btn(c, "Подключить Telegram", 620, 26, 150, 34, self.connect_tg, accent=True)
-        self.btn(c, "Стоп", 780, 26, 48, 34, self.stop_tg)
+        self.tg_stop = self.btn(c, "Стоп", 780, 26, 48, 34, self.stop_tg)
 
     def _log_area(self):
         tk.Label(self, text="ЖУРНАЛ", bg=BG, fg=DIM, font=("Segoe UI", 8, "bold")).place(x=30, y=840)
@@ -281,8 +293,32 @@ class App(tk.Tk):
 
     def refresh_all(self):
         self.load_strategies()
-        self.refresh_tg()
         self.load_settings()
+        self.refresh_state()
+
+    def is_running(self):
+        sh = self.service_sh()
+        if not os.path.exists(sh): return False
+        c,_ = run_cmd(["bash", sh, "service", "status"], cwd=os.path.dirname(sh))
+        if c == 0: return True
+        c,_ = run_cmd(["pgrep", "-f", "nfqws|tpws|zapret"], cwd=None)
+        return c == 0
+
+    def refresh_state(self):
+        running = self.is_running()
+        has_base = os.path.exists(self.service_sh())
+        self._draw_power(running)
+        self._draw_pill_dot(running)
+        self.pill.configure(text="АКТИВЕН" if running else "ВЫКЛЮЧЕН", fg="#7EE8A6" if running else "#969AA5")
+        self.state_lbl.configure(text="Активен" if running else ("Служба не найдена" if not has_base else "Выключен"), fg=GREEN if running else (RED if not has_base else TEXT))
+        st = self._read_conf_key('strategy')
+        if not has_base:
+            self.sub_lbl.configure(text="Установка не найдена — нажмите «Папка»")
+            self.folder_btn.configure(text="Установить")
+        else:
+            self.sub_lbl.configure(text="Служба zapret" + (f" · {st}" if st else ""))
+            self.folder_btn.configure(text="Папка")
+        self.refresh_tg()
 
     def load_strategies(self):
         base = self.base_path(); items = []; seen=set()
@@ -298,6 +334,7 @@ class App(tk.Tk):
         if items and not self.strategy_var.get():
             cur = self._read_conf_key('strategy')
             self.strategy_var.set(cur if cur in items else items[0])
+        self.apply_btn.configure(state=("normal" if items else "disabled"))
 
     def _read_conf_key(self, key):
         try:
@@ -328,10 +365,10 @@ class App(tk.Tk):
         st = self.strategy_var.get().strip()
         if not st: return
         self._write_conf_keys({'strategy': st})
-        self.log(f"Стратегия сохранена: {st}")
-        self.run_service(['service','restart'])
+        self.log(f"Применение стратегии: {st}")
+        self.run_service(['service','restart'], after=lambda: self.after(0, self.run_checks))
 
-    def run_service(self, args):
+    def run_service(self, args, after=None):
         sh = self.service_sh()
         if not os.path.exists(sh):
             self.log("База zapret не найдена. Укажите путь/установите базу."); return
@@ -339,14 +376,33 @@ class App(tk.Tk):
             self.log("$ bash service.sh " + " ".join(args))
             c,o = run_cmd(["bash", sh]+args, cwd=os.path.dirname(sh))
             self.log((o.strip() or f"Код {c}")[:4000])
+            self.after(0, self.refresh_state)
+            if after: self.after(0, after)
         threading.Thread(target=work, daemon=True).start()
 
-    def toggle_service(self): self.run_service(['service','start'])
+    def toggle_service(self):
+        if self.is_running(): self.run_service(['service','stop'])
+        else: self.run_service(['service','start'])
     def restart_service(self): self.run_service(['service','restart'])
     def open_folder(self):
         d = self.base_path()
-        if os.path.isdir(d): subprocess.Popen(['xdg-open', d])
-        else: self.log('Папка базы не найдена.')
+        if not os.path.isdir(d):
+            self.install_base(); return
+        try: subprocess.Popen(['xdg-open', d])
+        except Exception: subprocess.Popen(['gio','open',d])
+
+    def install_base(self):
+        dest = os.path.join(DATA, 'base')
+        if os.path.exists(dest):
+            self.base_dir = dest; self.state['base_dir']=dest; save_state(self.state); self.refresh_all(); return
+        def work():
+            self.log('Загрузка базы zapret...')
+            c,o = run_cmd(['git','clone','--depth','1', BASE_REPO, dest])
+            if c!=0: self.log('Ошибка установки: '+o); return
+            self.base_dir = dest; self.state['base_dir']=dest; save_state(self.state)
+            self.log('База установлена: '+dest)
+            self.after(0, self.refresh_all)
+        threading.Thread(target=work, daemon=True).start()
 
     def toggle_checks(self):
         self.checks_expanded = not self.checks_expanded
@@ -358,29 +414,32 @@ class App(tk.Tk):
         self.log_panel.place_configure(y=860-shift)
         self.chk_toggle.config(text='▴' if self.checks_expanded else '▾')
         for _,d,st,y in self.check_rows:
-            if self.checks_expanded: d.place(x=24,y=y+4); st.place(x=200,y=y-1)
+            if self.checks_expanded: d.place(x=24,y=y+4); st.place(x=200,y=y-2)
             else: d.place_forget(); st.place_forget()
 
     def run_checks(self):
         targets=[('YouTube','youtube.com',443),('Discord','discord.com',443),('Roblox','roblox.com',443),('SoundCloud','soundcloud.com',443),('Telegram','telegram.org',443)]
         def work():
             for name,host,port in targets:
+                t=time.time()
                 try:
                     socket.create_connection((host,port),timeout=4)
-                    res=(GREEN,'Доступен')
-                except Exception:
-                    res=(RED,'Недоступен')
+                    ms=int((time.time()-t)*1000)
+                    res=(GREEN,f'доступен · {ms} мс')
+                except Exception as e:
+                    res=(RED,'недоступен · '+(str(e).split(':')[-1].strip()[:30] or 'ошибка'))
                 self.after(0, lambda n=name,r=res: self._set_check(n,r))
-        for _,d,st,_ in self.check_rows: self.after(0, lambda d=d,st=st: (d.set(YELLOW), st.config(text='Проверка…', fg=DIM)))
+        for _,d,st,_ in self.check_rows: self.after(0, lambda d=d,st=st: (d.set(YELLOW), st.config(text='проверка…', fg=DIM)))
         threading.Thread(target=work, daemon=True).start()
 
     def _set_check(self,name,res):
         for n,d,st,_ in self.check_rows:
-            if n==name: d.set(res[0]); st.config(text=res[1], fg=TEXT if res[0]==GREEN else DIM)
+            if n==name: d.set(res[0]); st.config(text=res[1], fg=("#A0D2B4" if res[0]==GREEN else ("#D2A0A0" if res[0]==RED else DIM)))
 
     def save_settings(self):
         self._write_conf_keys({'gamefilter': self.gf.get(), 'ipset': self.ipset.get(), 'autoupdate': self.au.get()})
         self.log('Настройки сохранены.')
+        self.refresh_state()
 
     def load_settings(self):
         self.gf.set(self._read_conf_key('gamefilter') or 'disabled')
@@ -389,7 +448,7 @@ class App(tk.Tk):
 
     def replace_fakes(self): self.log('Replace fakes: используйте инструменты базы zapret при необходимости.')
 
-    def on_svc_auto(self, v): self.log('Автозапуск службы: настройте через "Сервис: install" в меню базы.')
+    def on_svc_auto(self, v): self.log('Автозапуск службы: настройте через управление сервисом в базе zapret.')
     def on_app_auto(self, v):
         if v:
             exe=os.path.abspath(sys.argv[0])
@@ -403,14 +462,14 @@ class App(tk.Tk):
 
     # TgProxy
     def refresh_tg(self):
-        p=tg_port()
-        ok=port_open(p)
-        self.tg_dot.set(GREEN if ok else DIM)
+        p=tg_port(); ok=port_open(p)
+        self.tg_dot.set(GREEN if ok else "#787C88")
         self.tg_status.config(text=f"TgProxy работает · 127.0.0.1:{p}" if ok else "TgProxy выключен", fg=TEXT if ok else DIM)
+        self.tg_start.configure(text=("Запустить" if os.path.exists(TG_BIN) else "Установить"))
 
     def install_tg(self):
         def work():
-            ensure_tg_conf(); self.log('Скачивание TgProxy...')
+            ensure_tg_conf(); self.log('Загрузка TgProxy…')
             c,o=run_cmd(['curl','-fL','--retry','3','-o',TG_BIN+'.part',TG_RELEASE])
             if c!=0: self.log('Ошибка: '+o); return
             os.replace(TG_BIN+'.part',TG_BIN); os.chmod(TG_BIN,0o755); self.log('TgProxy установлен.'); self.after(0,self.refresh_tg)
@@ -418,7 +477,7 @@ class App(tk.Tk):
 
     def start_tg(self):
         ensure_tg_conf()
-        if not os.path.exists(TG_BIN): self.log('Сначала установите TgProxy.'); return
+        if not os.path.exists(TG_BIN): self.install_tg(); return
         if port_open(tg_port()): self.log('TgProxy уже запущен.'); self.refresh_tg(); return
         try:
             with open(TG_LOG,'a',encoding='utf-8') as lf: subprocess.Popen([TG_BIN], cwd=TG_DIR, stdout=lf, stderr=lf, start_new_session=True)
@@ -426,7 +485,7 @@ class App(tk.Tk):
         except Exception as e: self.log('Ошибка: '+str(e))
         self.after(1000,self.refresh_tg)
 
-    def stop_tg(self): run_cmd(['pkill','-f',TG_BIN]); self.log('TgProxy остановлен.'); self.after(300,self.refresh_tg)
+    def stop_tg(self): run_cmd(['pkill','-f','tg-ws-proxy']); self.log('TgProxy остановлен.'); self.after(300,self.refresh_tg)
     def save_tg_port(self):
         try: p=int(self.tg_port_var.get().strip())
         except: p=1443
@@ -447,7 +506,7 @@ class App(tk.Tk):
         except Exception as e: self.log(str(e))
 
     def _tick(self):
-        self.refresh_tg()
+        self.refresh_state()
         self.after(3000, self._tick)
 
 

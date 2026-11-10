@@ -24,6 +24,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var checkLabels: [String: (NSView, NSTextField)] = [:]
     private var appAutoBtn: NSButton!
     private var tgAutoBtn: NSButton!
+    private var tgStartButton: NSButton?
     private var timer: Timer?
     private let fm = FileManager.default
 
@@ -58,18 +59,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let title = label("ZAPRET", 24, true, .white)
         title.frame = NSRect(x: 26, y: 930, width: 300, height: 36); cv.addSubview(title)
-        statusPill = label("● неактивен", 11, true, NSColor(calibratedWhite: 0.6, alpha: 1))
+        statusPill = label("ВЫКЛЮЧЕН", 9, true, NSColor(calibratedRed: 0.588, green: 0.604, blue: 0.647, alpha: 1))
         statusPill.alignment = .center
-        statusPill.frame = NSRect(x: 692, y: 928, width: 182, height: 34)
-        statusPill.wantsLayer = true; statusPill.layer?.backgroundColor = NSColor(calibratedRed: 0.12, green: 0.125, blue: 0.157, alpha: 1).cgColor; statusPill.layer?.cornerRadius = 17
+        statusPill.frame = NSRect(x: 692, y: 928, width: 182, height: 44)
+        statusPill.wantsLayer = true; statusPill.layer?.backgroundColor = NSColor(calibratedRed: 0.125, green: 0.133, blue: 0.165, alpha: 1).cgColor; statusPill.layer?.cornerRadius = 22
         cv.addSubview(statusPill)
 
         // Service card
         let svc = card(x: 26, y: 778, w: 848, h: 140, in: cv)
         let power = NSButton(title: "⏻", target: self, action: #selector(openZapretMac))
         power.bezelStyle = .circular; power.frame = NSRect(x: 20, y: 34, width: 72, height: 72); svc.addSubview(power)
-        stateLabel = label("Неактивен", 15, true, .white); stateLabel.frame = NSRect(x: 114, y: 82, width: 300, height: 22); svc.addSubview(stateLabel)
-        subLabel = label("Служба zapret", 9, false, dim()); subLabel.frame = NSRect(x: 116, y: 60, width: 300, height: 16); svc.addSubview(subLabel)
+        stateLabel = label("Выключен", 15, true, .white); stateLabel.frame = NSRect(x: 114, y: 82, width: 300, height: 22); svc.addSubview(stateLabel)
+        subLabel = label("Служба zapret · стратегия не определена", 9, false, dim()); subLabel.frame = NSRect(x: 116, y: 60, width: 420, height: 16); svc.addSubview(subLabel)
         addBtn(svc, "Перезапустить", 560, 86, 150, 32, #selector(openZapretMac), false)
         addBtn(svc, "Папка", 720, 86, 108, 32, #selector(openLists), false)
         let autoLbl = label("Автозапуск службы", 9, false, dim()); autoLbl.frame = NSRect(x: 560, y: 40, width: 160, height: 16); svc.addSubview(autoLbl)
@@ -92,7 +93,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             dot.wantsLayer = true; dot.layer?.cornerRadius = 6; dot.layer?.backgroundColor = NSColor.gray.cgColor
             checks.addSubview(dot)
             let nl = label(name, 10, true, .white); nl.frame = NSRect(x: 44, y: y-2, width: 120, height: 16); checks.addSubview(nl)
-            let sl = label("Проверка…", 9, false, dim()); sl.frame = NSRect(x: 200, y: y-1, width: 200, height: 16); checks.addSubview(sl)
+            let sl = label("проверка…", 9, false, dim()); sl.frame = NSRect(x: 200, y: y-1, width: 260, height: 16); checks.addSubview(sl)
             checkLabels[name] = (dot, sl)
         }
         addBtn(checks, "Проверить", 24, 6, 120, 30, #selector(runChecks), false)
@@ -121,7 +122,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         tgPortField.frame = NSRect(x: 62, y: 26, width: 70, height: 24); tg.addSubview(tgPortField)
         addBtn(tg, "OK", 138, 24, 44, 28, #selector(saveTgPort), false)
         addBtn(tg, "Настройки", 192, 24, 110, 28, #selector(openTgConfig), false)
-        addBtn(tg, "Запустить", 490, 54, 120, 34, #selector(startTg), false)
+        let startBtn = NSButton(title: "Запустить", target: self, action: #selector(startTg)); startBtn.frame = NSRect(x: 490, y: 54, width: 120, height: 34); startBtn.bezelStyle = .rounded; tg.addSubview(startBtn); self.tgStartButton = startBtn
         addBtn(tg, "Подключить Telegram", 620, 54, 150, 34, #selector(connectTelegram), true)
         addBtn(tg, "Стоп", 780, 54, 48, 34, #selector(stopTg), false)
         tgAutoBtn = NSButton(checkboxWithTitle: "Автозапуск TgProxy", target: self, action: #selector(toggleTgAutostart))
@@ -195,7 +196,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let ok = self.portOpen(self.tgPort())
             self.tgStatusLabel.stringValue = ok ? "TgProxy работает · 127.0.0.1:\(self.tgPort())" : "TgProxy выключен"
             self.tgStatusLabel.textColor = ok ? .white : self.dim()
-            self.statusPill.stringValue = ok ? "● TgProxy" : "● неактивен"
+            self.statusPill.stringValue = ok ? "АКТИВЕН" : "ВЫКЛЮЧЕН"
+            self.statusPill.textColor = ok ? NSColor(calibratedRed: 0.494, green: 0.91, blue: 0.651, alpha: 1) : NSColor(calibratedRed: 0.588, green: 0.604, blue: 0.647, alpha: 1)
+            self.statusPill.layer?.backgroundColor = (ok ? NSColor(calibratedRed: 0.125, green: 0.235, blue: 0.176, alpha: 1) : NSColor(calibratedRed: 0.125, green: 0.133, blue: 0.165, alpha: 1)).cgColor
+            self.stateLabel.stringValue = ok ? "Активен" : "Выключен"
+            self.stateLabel.textColor = ok ? NSColor.systemGreen : .white
+            self.tgStartButton?.title = self.fm.fileExists(atPath: self.tgBin.path) ? "Запустить" : "Установить"
             self.appAutoBtn.state = self.fm.fileExists(atPath: self.appPlist.path) ? .on : .off
             self.tgAutoBtn.state = self.fm.fileExists(atPath: self.tgPlist.path) ? .on : .off
         }
@@ -205,9 +211,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let map = [("YouTube","youtube.com"),("Discord","discord.com"),("Roblox","roblox.com"),("SoundCloud","soundcloud.com"),("Telegram","telegram.org")]
         DispatchQueue.global().async {
             for (n,h) in map {
+                let t = Date()
                 let ok = self.run("/sbin/ping", ["-c","1","-W","2000",h]) == 0
+                let ms = Int(Date().timeIntervalSince(t)*1000)
                 DispatchQueue.main.async {
-                    if let (dot,sl) = self.checkLabels[n] { dot.layer?.backgroundColor = (ok ? NSColor.systemGreen : NSColor.systemRed).cgColor; sl.stringValue = ok ? "Доступен" : "Недоступен"; sl.textColor = ok ? .white : self.dim() }
+                    if let (dot,sl) = self.checkLabels[n] { dot.layer?.backgroundColor = (ok ? NSColor.systemGreen : NSColor.systemRed).cgColor; sl.stringValue = ok ? "доступен · \(ms) мс" : "недоступен"; sl.textColor = ok ? NSColor(calibratedRed: 0.627, green: 0.824, blue: 0.706, alpha: 1) : NSColor(calibratedRed: 0.824, green: 0.627, blue: 0.627, alpha: 1) }
                 }
             }
         }
@@ -215,7 +223,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func startTg() {
-        ensureTgConfig(); guard fm.fileExists(atPath: tgBin.path) else { log("Сначала установите TgProxy."); return }
+        ensureTgConfig();
+        if !fm.fileExists(atPath: tgBin.path) { installTg(); return }
         if portOpen(tgPort()) { log("TgProxy уже запущен."); refresh(); return }
         let p = Process(); p.executableURL = tgBin; p.currentDirectoryURL = tgDir
         if !fm.fileExists(atPath: tgLog.path) { fm.createFile(atPath: tgLog.path, contents: nil) }
