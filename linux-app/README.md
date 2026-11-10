@@ -1,6 +1,6 @@
-# Zapret Control GUI (Linux) — исходники
+# Zapret Control (Linux) — исходники
 
-GUI-приложение (Python 3 + Tkinter) для управления zapret на Linux на базе [Sergeydigl3/zapret-discord-youtube-linux](https://github.com/Sergeydigl3/zapret-discord-youtube-linux) и [tg-ws-proxy](https://github.com/Flowseal/tg-ws-proxy).
+Приложение (Python 3 + Tkinter) для управления zapret на Linux на базе [Sergeydigl3/zapret-discord-youtube-linux](https://github.com/Sergeydigl3/zapret-discord-youtube-linux) и [tg-ws-proxy](https://github.com/Flowseal/tg-ws-proxy).
 
 > Готовые бинарники в этом окружении не собирались. Это исходный код: запустите/соберите на Linux.
 
@@ -20,7 +20,7 @@ GUI-приложение (Python 3 + Tkinter) для управления zapret
 ## Запуск из исходников
 
 ```bash
-cd linux-gui
+cd linux-app
 python3 zapret_control_linux.py
 ```
 

@@ -1,6 +1,6 @@
-# Zapret Control (macOS) — GUI исходники
+# Zapret Control (macOS) — исходники
 
-Исходный код GUI-приложения (Swift, AppKit, menu bar) для macOS: управление TgProxy и интеграция с [Flowseal/zapret-mac-discord-youtube](https://github.com/Flowseal/zapret-mac-discord-youtube) (ZapretMac).
+Исходный код-приложения (Swift, AppKit, menu bar) для macOS: управление TgProxy и интеграция с [Flowseal/zapret-mac-discord-youtube](https://github.com/Flowseal/zapret-mac-discord-youtube) (ZapretMac).
 
 > Готовый `.app` в этом окружении не собирался (требуется macOS + Xcode). Это проект с исходниками и инструкцией сборки.
 
@@ -17,7 +17,7 @@
 Требования: macOS 13+, Xcode Command Line Tools (`xcode-select --install`).
 
 ```bash
-cd macos-gui
+cd macos-app
 chmod +x build.sh
 ./build.sh
 ```
@@ -32,5 +32,5 @@ chmod +x build.sh
 
 ## Примечания
 
-- Обход трафика (nfqws/utun, стратегии, IPSet) выполняет ZapretMac; данное GUI управляет TgProxy и удобным запуском/автозапуском.
+- Обход трафика (nfqws/utun, стратегии, IPSet) выполняет ZapretMac; данное управляет TgProxy и удобным запуском/автозапуском.
 - TgProxy ставится в `~/Library/Application Support/ZapretControl/tgproxy/`, конфиг — `~/Library/Application Support/TgWsProxy/config.json`.

@@ -2,9 +2,9 @@
 
 Панель управления обходом на базе [zapret-discord-youtube](https://github.com/Flowseal/zapret-discord-youtube). Помогает открыть YouTube, Discord, Roblox, SoundCloud и другие сервисы, если они не работают из‑за ограничений провайдера.
 
-- **Windows:** готовое GUI-приложение (`ZapretControl.exe`)
-- **Linux:** GUI-приложение (исходники, Python/Tkinter) — `linux-gui/`
-- **macOS:** GUI-приложение (исходники, Swift/AppKit) — `macos-gui/`
+- **Windows:** готовое приложение (`ZapretControl.exe`)
+- **Linux:** приложение (исходники, Python/Tkinter) — `linux-app/`
+- **macOS:** приложение (исходники, Swift/AppKit) — `macos-app/`
 
 ![Скриншот](docs/screenshot.png)
 
@@ -16,37 +16,37 @@
 3. Разрешите запуск **от имени администратора**.
 4. Дождитесь подготовки, выберите стратегию и нажмите **«Применить»**. Если не помогает — попробуйте другую стратегию.
 
-### Linux (GUI)
-1. Скачайте `ZapretControl-linux-gui-src.zip` из [Releases](../../releases) и распакуйте (или используйте папку `linux-gui/` из репозитория).
+### Linux
+1. Скачайте `ZapretControl-linux-src.zip` из [Releases](../../releases) и распакуйте (или используйте папку `linux-app/` из репозитория).
 2. Установите зависимости: Python 3.8+, `python3-tk`, `git`, `curl`, `nftables`.
 3. Запустите:
    ```bash
-   cd linux-gui
+   cd linux-app
    python3 zapret_control_linux.py
    ```
 4. В приложении установите/укажите базу zapret (на основе [Sergeydigl3/zapret-discord-youtube-linux](https://github.com/Sergeydigl3/zapret-discord-youtube-linux)), управляйте сервисом/стратегиями и TgProxy.
 
-Опционально: сборка в бинарник через PyInstaller — см. `linux-gui/README.md`.
+Опционально: сборка в бинарник через PyInstaller — см. `linux-app/README.md`.
 
-### macOS (GUI)
-1. Скачайте `ZapretControl-macos-gui-src.zip` из [Releases](../../releases) и распакуйте (или используйте `macos-gui/`).
+### macOS
+1. Скачайте `ZapretControl-macos-src.zip` из [Releases](../../releases) и распакуйте (или используйте `macos-app/`).
 2. На Mac (macOS 13+, Xcode Command Line Tools) соберите приложение:
    ```bash
-   cd macos-gui
+   cd macos-app
    chmod +x build.sh
    ./build.sh
    ```
 3. Запустите `build/ZapretControl.app` (при необходимости перенесите в `/Applications` и разрешите запуск в настройках безопасности).
 4. Через меню управляйте TgProxy (установка/запуск/автозапуск) и открывайте [ZapretMac](https://github.com/Flowseal/zapret-mac-discord-youtube) для настройки обхода (стратегии/IPSet).
 
-> Готовые `.app`/бинарники для Linux и macOS в релизе не прикладываются как собранные файлы — публикуются исходники GUI, собираемые на целевой ОС.
+> Готовые `.app`/бинарники для Linux и macOS в релиз не прикладываются — публикуются исходники, собираемые на целевой ОС.
 
 ### Дополнительно (скриптовые пакеты)
-В репозитории и релизах также есть `linux/` и `macos/` — скриптовые наборы/обёртки для быстрого запуска upstream-компонентов и TgProxy.
+В репозитории и релизах также есть `linux/` и `macos/` — скриптовые наборы для быстрого запуска upstream-компонентов и TgProxy.
 
 ## Что делают настройки
 
-### Windows (GUI)
+### Windows
 - **Стратегия + «Применить»** — выбирает параметры обхода (nfqws/winws). Если не помогает — попробуйте другую стратегию.
 - **Служба zapret** — запуск/остановка/перезапуск системной службы обхода.
 - **Автозапуск службы** — запуск службы zapret вместе с Windows.
@@ -59,16 +59,16 @@
 - **Кнопка «Сохранить»** — сохраняет настройки (zapret-параметры применяются автоматически при необходимости).
 - **Telegram / TgProxy** — локальный прокси для Telegram Desktop: установка, запуск/остановка, порт, подключение, настройки (host/port, буферы, пул, режимы cfproxy/h2/no_secure и др.).
 
-### Linux (GUI)
+### Linux
 - **База zapret** — путь/установка базы [zapret-discord-youtube-linux](https://github.com/Sergeydigl3/zapret-discord-youtube-linux), управление сервисом и стратегиями (через `service.sh`/`conf.env`).
 - **TgProxy** — установка, запуск/остановка, порт, автозапуск (user `systemd`).
 - **Автозапуск приложения** — добавление `.desktop` в автозапуск пользователя.
 - **Проверки** — базовая проверка доступности сервисов.
 
-### macOS (GUI)
+### macOS
 - **TgProxy** — установка, запуск/остановка, автозапуск (LaunchAgent).
-- **ZapretMac** — открытие/интеграция с [ZapretMac](https://github.com/Flowseal/zapret-mac-discord-youtube), где настраиваются стратегии, списки и IPSet (обход трафика).
-- **Автозапуск приложения** — LaunchAgent для запуска GUI при входе.
+- **ZapretMac** — открытие [ZapretMac](https://github.com/Flowseal/zapret-mac-discord-youtube), где настраиваются стратегии, списки и IPSet (обход трафика).
+- **Автозапуск приложения** — LaunchAgent для запуска приложения при входе.
 - **Проверки** — базовая проверка доступности сервисов.
 
 ## Сборка (Windows)
