@@ -55,9 +55,18 @@ namespace ZapretControl
             get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ZapretControl"); }
         }
 
+        public static string BundledInstallDir
+        {
+            get { return Path.Combine(AppBaseDir, "zapret"); }
+        }
+
         public static string DefaultInstallDir
         {
-            get { return Path.Combine(LocalDir, "zapret"); }
+            get
+            {
+                if (IsInstallDir(BundledInstallDir)) return BundledInstallDir;
+                return Path.Combine(LocalDir, "zapret");
+            }
         }
 
         public static string ConfigFile
@@ -289,6 +298,8 @@ namespace ZapretControl
 
         public static string DetectInstallDir()
         {
+            if (IsInstallDir(BundledInstallDir)) return BundledInstallDir;
+
             string fromService = InstallDirFromService();
             if (fromService != null) return fromService;
 
@@ -296,7 +307,7 @@ namespace ZapretControl
             if (LoadConfig().TryGetValue("install", out saved) && IsInstallDir(saved))
                 return saved;
 
-            if (IsInstallDir(DefaultInstallDir)) return DefaultInstallDir;
+            if (IsInstallDir(Path.Combine(LocalDir, "zapret"))) return Path.Combine(LocalDir, "zapret");
 
             string user = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             string[] roots = new string[]
@@ -896,6 +907,141 @@ namespace ZapretControl
         {
             try { if (File.Exists(path)) File.Delete(path); }
             catch { }
+        }
+
+        public static string GetGameFilterStatus(string installDir)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(installDir)) return "disabled";
+                string path = Path.Combine(installDir, "utils", "game_filter.enabled");
+                if (!File.Exists(path)) return "disabled";
+                string mode = "all";
+                foreach (var line in File.ReadAllLines(path))
+                {
+                    var t = line.Trim();
+                    if (t.StartsWith("mode=", StringComparison.OrdinalIgnoreCase)) mode = t.Substring(5).Trim().ToLowerInvariant();
+                }
+                if (mode == "tcp") return "tcp";
+                if (mode == "udp") return "udp";
+                if (mode == "disabled") return "disabled";
+                return "all";
+            }
+            catch { return "disabled"; }
+        }
+
+        public static void SetGameFilter(string installDir, string mode)
+        {
+            if (string.IsNullOrEmpty(installDir)) return;
+            string utils = Path.Combine(installDir, "utils");
+            Directory.CreateDirectory(utils);
+            string path = Path.Combine(utils, "game_filter.enabled");
+            if (mode == "disabled")
+            {
+                TryDelete(path);
+                return;
+            }
+            var sb = new StringBuilder();
+            sb.AppendLine("mode=" + mode);
+            if (mode == "all" || mode == "tcp") sb.AppendLine("tcp=1024-65535");
+            if (mode == "all" || mode == "udp") sb.AppendLine("udp=1024-65535");
+            File.WriteAllText(path, sb.ToString(), new UTF8Encoding(false));
+        }
+
+        public static string GetIPSetStatus(string installDir)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(installDir)) return "unknown";
+                string listFile = Path.Combine(installDir, "lists", "ipset-all.txt");
+                if (!File.Exists(listFile)) return "any";
+                var lines = File.ReadAllLines(listFile).Where(l => l.Trim().Length > 0).ToList();
+                if (lines.Count == 0) return "any";
+                if (lines.Count == 1 && lines[0].Trim() == "203.0.113.113/32") return "none";
+                return "loaded";
+            }
+            catch { return "unknown"; }
+        }
+
+        public static void CycleIPSet(string installDir)
+        {
+            if (string.IsNullOrEmpty(installDir)) return;
+            string listFile = Path.Combine(installDir, "lists", "ipset-all.txt");
+            string backup = listFile + ".backup";
+            Directory.CreateDirectory(Path.GetDirectoryName(listFile));
+            string status = GetIPSetStatus(installDir);
+            if (status == "loaded")
+            {
+                try { if (File.Exists(backup)) File.Delete(backup); } catch { }
+                if (File.Exists(listFile)) File.Move(listFile, backup);
+                File.WriteAllText(listFile, "203.0.113.113/32\r\n", new UTF8Encoding(false));
+            }
+            else if (status == "none")
+            {
+                File.WriteAllText(listFile, "", new UTF8Encoding(false));
+            }
+            else
+            {
+                if (File.Exists(backup))
+                {
+                    try { if (File.Exists(listFile)) File.Delete(listFile); } catch { }
+                    File.Move(backup, listFile);
+                }
+                else
+                {
+                    File.WriteAllText(listFile, "203.0.113.113/32\r\n", new UTF8Encoding(false));
+                }
+            }
+        }
+
+        public static bool GetAutoUpdateEnabled(string installDir)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(installDir)) return false;
+                return File.Exists(Path.Combine(installDir, "utils", "check_updates.enabled"));
+            }
+            catch { return false; }
+        }
+
+        public static void SetAutoUpdateEnabled(string installDir, bool enabled)
+        {
+            if (string.IsNullOrEmpty(installDir)) return;
+            string utils = Path.Combine(installDir, "utils");
+            Directory.CreateDirectory(utils);
+            string path = Path.Combine(utils, "check_updates.enabled");
+            if (enabled) File.WriteAllText(path, "ENABLED\r\n", new UTF8Encoding(false));
+            else TryDelete(path);
+        }
+
+        public static List<string> GetFakeBinFiles(string installDir)
+        {
+            var list = new List<string>();
+            try
+            {
+                if (string.IsNullOrEmpty(installDir)) return list;
+                string bin = Path.Combine(installDir, "bin");
+                if (!Directory.Exists(bin)) return list;
+                foreach (var f in Directory.GetFiles(bin, "*.bin"))
+                {
+                    string name = Path.GetFileNameWithoutExtension(f);
+                    if (!name.StartsWith("ACTIVE_", StringComparison.OrdinalIgnoreCase))
+                        list.Add(Path.GetFileName(f));
+                }
+                list.Sort(StringComparer.OrdinalIgnoreCase);
+            }
+            catch { }
+            return list;
+        }
+
+        public static void SetActiveFake(string installDir, string fileName, bool forDiscord)
+        {
+            if (string.IsNullOrEmpty(installDir) || string.IsNullOrEmpty(fileName)) return;
+            string bin = Path.Combine(installDir, "bin");
+            string src = Path.Combine(bin, fileName);
+            if (!File.Exists(src)) return;
+            string dst = Path.Combine(bin, forDiscord ? "ACTIVE_DISCORD_UDP.bin" : "ACTIVE_GAME_UDP.bin");
+            File.Copy(src, dst, true);
         }
 
         public static int SelfTest()

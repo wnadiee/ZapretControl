@@ -58,6 +58,10 @@ namespace ZapretControl
         private Label _tgServiceLabel;
         private Button _tgStart;
         private Button _tgStop;
+        private Panel _settingsCard;
+        private Label _gameFilterValue;
+        private Label _ipsetValue;
+        private Label _autoUpdateValue;
         private RichTextBox _log;
         private NotifyIcon _tray;
         private Timer _refreshTimer;
@@ -90,7 +94,7 @@ namespace ZapretControl
         private void BuildUi()
         {
             Text = "Zapret Control";
-            ClientSize = new Size(900, 800);
+            ClientSize = new Size(900, 920);
             BackColor = Bg;
             ForeColor = TextMain;
             Font = new Font("Segoe UI", 9f);
@@ -111,6 +115,7 @@ namespace ZapretControl
             BuildServiceCard();
             BuildStrategyCard();
             BuildChecksCard();
+            BuildSettingsCard();
             BuildTelegramCard();
             BuildLog();
         }
@@ -208,10 +213,11 @@ namespace ZapretControl
                 if (control.Top >= 30) control.Visible = expanded;
             }
 
-            _tgCard.Top = 562 - shift;
-            _logTitle.Top = 674 - shift;
-            _logPanel.Top = 694 - shift;
-            ClientSize = new Size(900, 800 - shift);
+            _settingsCard.Top = 562 - shift;
+            _tgCard.Top = 682 - shift;
+            _logTitle.Top = 794 - shift;
+            _logPanel.Top = 814 - shift;
+            ClientSize = new Size(900, 920 - shift);
 
             _checksToggle.Text = expanded ? "▲" : "▼";
         }
@@ -228,9 +234,38 @@ namespace ZapretControl
             return dot;
         }
 
+        private void BuildSettingsCard()
+        {
+            var card = CreateCard(26, 562, 848, 108);
+            _settingsCard = card;
+
+            MakeLabel(card, "НАСТРОЙКИ", 20, 12, 8f, true, TextDim);
+
+            MakeLabel(card, "Game Filter", 24, 40, 9.5f, true, TextMain);
+            _gameFilterValue = MakeLabel(card, "-", 130, 40, 9f, false, TextDim);
+            var gfBtn = MakeButton(card, "Переключить", 240, 34, 120, 28, false);
+            gfBtn.Click += delegate { CycleGameFilter(); };
+
+            MakeLabel(card, "IPSet Filter", 390, 40, 9.5f, true, TextMain);
+            _ipsetValue = MakeLabel(card, "-", 480, 40, 9f, false, TextDim);
+            var ipBtn = MakeButton(card, "Переключить", 560, 34, 120, 28, false);
+            ipBtn.Click += delegate { CycleIPSetFilter(); };
+
+            MakeLabel(card, "Auto-Update", 24, 74, 9.5f, true, TextMain);
+            _autoUpdateValue = MakeLabel(card, "-", 130, 74, 9f, false, TextDim);
+            var auBtn = MakeButton(card, "Переключить", 240, 68, 120, 28, false);
+            auBtn.Click += delegate { ToggleAutoUpdate(); };
+
+            var fakeBtn = MakeButton(card, "Replace fakes", 390, 68, 120, 28, false);
+            fakeBtn.Click += delegate { ReplaceActiveFakes(); };
+
+            MakeLabel(card, "после смены: Перезапустить", 560, 74, 8.5f, false, TextDim);
+
+            Controls.Add(card);
+        }
         private void BuildTelegramCard()
         {
-            var card = CreateCard(26, 562, 848, 96);
+            var card = CreateCard(26, 682, 848, 96);
             _tgCard = card;
 
             MakeLabel(card, "TELEGRAM", 20, 12, 8f, true, TextDim);
@@ -255,10 +290,10 @@ namespace ZapretControl
 
         private void BuildLog()
         {
-            _logTitle = MakeLabel(this, "ЖУРНАЛ", 30, 674, 8f, true, TextDim);
+            _logTitle = MakeLabel(this, "ЖУРНАЛ", 30, 794, 8f, true, TextDim);
 
             var panel = new Panel();
-            panel.SetBounds(26, 694, 848, 86);
+            panel.SetBounds(26, 814, 848, 86);
             _logPanel = panel;
             panel.BackColor = Color.FromArgb(13, 14, 18);
             panel.Paint += delegate(object sender, PaintEventArgs e)
@@ -602,6 +637,8 @@ namespace ZapretControl
 
             if (string.IsNullOrEmpty(strategyName))
                 _subLabel.Text = "Служба zapret · стратегия не определена";
+
+            RefreshSettings();
         }
 
         private void ToggleService()
@@ -1130,5 +1167,92 @@ namespace ZapretControl
 
             base.OnFormClosing(e);
         }
+
+        private void RefreshSettings()
+        {
+            if (_installDir == null)
+            {
+                if (_gameFilterValue != null) _gameFilterValue.Text = "-";
+                if (_ipsetValue != null) _ipsetValue.Text = "-";
+                if (_autoUpdateValue != null) _autoUpdateValue.Text = "-";
+                return;
+            }
+            try
+            {
+                string gf = Core.GetGameFilterStatus(_installDir);
+                if (gf == "all") gf = "enabled";
+                _gameFilterValue.Text = gf;
+                _ipsetValue.Text = Core.GetIPSetStatus(_installDir);
+                _autoUpdateValue.Text = Core.GetAutoUpdateEnabled(_installDir) ? "enabled" : "disabled";
+            }
+            catch { }
+        }
+
+        private void ReapplyHint()
+        {
+            Log("Нажмите «Применить» для применения настроек к службе.");
+        }
+
+        private void CycleGameFilter()
+        {
+            if (_installDir == null) return;
+            string cur = Core.GetGameFilterStatus(_installDir);
+            string next = cur == "disabled" ? "all" : (cur == "all" ? "tcp" : (cur == "tcp" ? "udp" : "disabled"));
+            try { Core.SetGameFilter(_installDir, next); Log("Game Filter: " + next); } catch (Exception ex) { Log("Game Filter: " + ex.Message); }
+            RefreshSettings();
+            ReapplyHint();
+        }
+
+        private void CycleIPSetFilter()
+        {
+            if (_installDir == null) return;
+            try { Core.CycleIPSet(_installDir); Log("IPSet Filter: " + Core.GetIPSetStatus(_installDir)); } catch (Exception ex) { Log("IPSet: " + ex.Message); }
+            RefreshSettings();
+            ReapplyHint();
+        }
+
+        private void ToggleAutoUpdate()
+        {
+            if (_installDir == null) return;
+            bool cur = Core.GetAutoUpdateEnabled(_installDir);
+            try { Core.SetAutoUpdateEnabled(_installDir, !cur); Log("Auto-Update: " + (!cur ? "enabled" : "disabled")); } catch (Exception ex) { Log("Auto-Update: " + ex.Message); }
+            RefreshSettings();
+        }
+
+        private void ReplaceActiveFakes()
+        {
+            if (_installDir == null) return;
+            var files = Core.GetFakeBinFiles(_installDir);
+            if (files.Count == 0) { Log("Нет .bin файлов для замены."); return; }
+            using (var dlg = new Form())
+            {
+                dlg.Text = "Replace active fakes";
+                dlg.ClientSize = new Size(420, 160);
+                dlg.FormBorderStyle = FormBorderStyle.FixedDialog;
+                dlg.MaximizeBox = false;
+                dlg.MinimizeBox = false;
+                dlg.StartPosition = FormStartPosition.CenterParent;
+                dlg.BackColor = Bg; dlg.ForeColor = TextMain;
+                var l1 = new Label(); l1.Text = "Discord fake:"; l1.Location = new Point(12, 18); l1.AutoSize = true; l1.ForeColor = TextMain; dlg.Controls.Add(l1);
+                var cb1 = new ComboBox(); cb1.DropDownStyle = ComboBoxStyle.DropDownList; cb1.SetBounds(110, 14, 290, 24); foreach (var f in files) cb1.Items.Add(f); if (cb1.Items.Count > 0) cb1.SelectedIndex = 0; dlg.Controls.Add(cb1);
+                var l2 = new Label(); l2.Text = "Game fake:"; l2.Location = new Point(12, 58); l2.AutoSize = true; l2.ForeColor = TextMain; dlg.Controls.Add(l2);
+                var cb2 = new ComboBox(); cb2.DropDownStyle = ComboBoxStyle.DropDownList; cb2.SetBounds(110, 54, 290, 24); foreach (var f in files) cb2.Items.Add(f); if (cb2.Items.Count > 0) cb2.SelectedIndex = 0; dlg.Controls.Add(cb2);
+                var ok = new Button(); ok.Text = "OK"; ok.SetBounds(220, 110, 80, 30); ok.DialogResult = DialogResult.OK; dlg.Controls.Add(ok);
+                var cancel = new Button(); cancel.Text = "Отмена"; cancel.SetBounds(310, 110, 80, 30); cancel.DialogResult = DialogResult.Cancel; dlg.Controls.Add(cancel);
+                dlg.AcceptButton = ok; dlg.CancelButton = cancel;
+                if (dlg.ShowDialog(this) == DialogResult.OK)
+                {
+                    try
+                    {
+                        if (cb1.SelectedItem != null) Core.SetActiveFake(_installDir, cb1.SelectedItem.ToString(), true);
+                        if (cb2.SelectedItem != null) Core.SetActiveFake(_installDir, cb2.SelectedItem.ToString(), false);
+                        Log("Active fakes обновлены.");
+                        ReapplyHint();
+                    }
+                    catch (Exception ex) { Log("Replace fakes: " + ex.Message); }
+                }
+            }
+        }
+
     }
 }

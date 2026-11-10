@@ -30,16 +30,24 @@ jobs:
           $item.VersionInfo | Format-List FileVersion,ProductName,FileDescription
           "Size: $($item.Length) bytes"
 
+      - name: Package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item ZapretControl.exe dist\
+          Copy-Item zapret dist\zapret -Recurse
+          Compress-Archive -Path dist\* -DestinationPath ZapretControl.zip -Force
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ZapretControl
-          path: ZapretControl.exe
+          path: ZapretControl.zip
           if-no-files-found: error
 
       - name: Publish release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: ZapretControl.exe
+          files: ZapretControl.zip
           generate_release_notes: false

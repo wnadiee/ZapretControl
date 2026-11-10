@@ -2,6 +2,7 @@
 *.pdb
 *.dll
 *.zip
+*.sys
 
 selftest.txt
 *.log
@@ -11,5 +12,9 @@ selftest.txt
 .vscode/
 *.user
 *.suo
-bin/
-obj/
+/obj/
+/bin/
+ZapretControl.old.exe
+
+!zapret/
+!zapret/**
