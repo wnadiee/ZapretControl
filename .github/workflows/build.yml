@@ -1,0 +1,45 @@
+name: build
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build
+        shell: cmd
+        run: src\build.bat
+
+      - name: Check output
+        shell: pwsh
+        run: |
+          if (-not (Test-Path ZapretControl.exe)) { throw "ZapretControl.exe not built" }
+          $item = Get-Item ZapretControl.exe
+          $item.VersionInfo | Format-List FileVersion,ProductName,FileDescription
+          "Size: $($item.Length) bytes"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZapretControl
+          path: ZapretControl.exe
+          if-no-files-found: error
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ZapretControl.exe
+          generate_release_notes: false

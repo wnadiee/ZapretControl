@@ -1,0 +1,15 @@
+*.exe
+*.pdb
+*.dll
+*.zip
+
+selftest.txt
+*.log
+*.part
+
+.vs/
+.vscode/
+*.user
+*.suo
+bin/
+obj/
