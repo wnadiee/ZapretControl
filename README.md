@@ -6,7 +6,7 @@
 - **Linux** — приложение из исходников (Python/Tkinter), папка `linux-app/`
 - **macOS** — приложение из исходников (Swift/AppKit), папка `macos-app/`
 
-![Скриншот](docs/screenshot.png)
+![Скриншот](docs/app-screenshot.png)
 
 ## Установка
 
