@@ -409,6 +409,7 @@ namespace ZapretControl
             if (_installDir != null)
             {
                 Log("Найдена установка zapret: " + _installDir);
+                try { Core.ApplyCustomizations(_installDir, null); } catch { }
                 SaveInstallPath();
                 PopulateStrategies();
             }
@@ -642,9 +643,10 @@ namespace ZapretControl
             _autoToggle.Checked = Core.GetServiceAutoStart();
             _silent = false;
 
-            bool tgRunning = Core.TgProxyRunning();
+            bool tgProc = false;
+            try { tgProc = System.Diagnostics.Process.GetProcessesByName("tgproxy").Length > 0 || System.Diagnostics.Process.GetProcessesByName("TgWsProxy").Length > 0; } catch { }
             bool tgPort = Core.TgProxyPortOpen();
-            bool tgActive = tgRunning || tgPort;
+            bool tgActive = tgProc || tgPort;
             int tgP = Core.GetTgProxyPort();
 
             if (tgPort)
@@ -1112,12 +1114,12 @@ namespace ZapretControl
         private void InitTimers()
         {
             _refreshTimer = new Timer();
-            _refreshTimer.Interval = 2500;
+            _refreshTimer.Interval = 5000;
             _refreshTimer.Tick += delegate { RefreshState(); };
             _refreshTimer.Start();
 
             _checksTimer = new Timer();
-            _checksTimer.Interval = 45000;
+            _checksTimer.Interval = 60000;
             _checksTimer.Tick += delegate { RunChecks(); };
             _checksTimer.Start();
         }

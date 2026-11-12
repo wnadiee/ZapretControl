@@ -424,6 +424,7 @@ namespace ZapretControl
                 string target = DefaultInstallDir;
                 if (Directory.Exists(target)) Directory.Delete(target, true);
                 MoveDirectory(root, target);
+                ApplyCustomizations(target, log);
                 if (log != null) log("Установлено: " + target);
 
                 string error;
@@ -436,6 +437,72 @@ namespace ZapretControl
             {
                 TryDelete(zip);
                 TryDeleteDir(tempDir);
+            }
+        }
+
+        public static void ApplyCustomizations(string installDir, Action<string> log)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(installDir)) return;
+                string lists = Path.Combine(installDir, "lists");
+                Directory.CreateDirectory(lists);
+                string userList = Path.Combine(lists, "list-general-user.txt");
+                string[] domains = new string[] {
+                    "# user list",
+                    "domain.example.abc",
+                    "roblox.com",
+                    "www.roblox.com",
+                    "api.roblox.com",
+                    "apis.roblox.com",
+                    "auth.roblox.com",
+                    "avatar.roblox.com",
+                    "assetdelivery.roblox.com",
+                    "catalog.roblox.com",
+                    "chat.roblox.com",
+                    "clientsettings.roblox.com",
+                    "clientsettingscdn.roblox.com",
+                    "data.roblox.com",
+                    "develop.roblox.com",
+                    "economy.roblox.com",
+                    "friends.roblox.com",
+                    "games.roblox.com",
+                    "groups.roblox.com",
+                    "inventory.roblox.com",
+                    "locale.roblox.com",
+                    "notifications.roblox.com",
+                    "presence.roblox.com",
+                    "privatemessages.roblox.com",
+                    "publish.roblox.com",
+                    "realtime.roblox.com",
+                    "thumbnails.roblox.com",
+                    "trades.roblox.com",
+                    "translations.roblox.com",
+                    "users.roblox.com",
+                    "web.roblox.com",
+                    "titanium.roblox.com",
+                    "setup.roblox.com",
+                    "versioncompatibility.api.roblox.com",
+                    "metrics.roblox.com",
+                    "ephemeralcounters.api.roblox.com",
+                    "rbxcdn.com",
+                    "rbxcdn.net",
+                    "rbxcdn.xyz",
+                    "rbx.com",
+                    "robloxlabs.com",
+                    "setup.rbxcdn.com",
+                    "arkoselabs.com",
+                    "soundcloud.com",
+                    "sndcdn.com"
+                };
+                File.WriteAllLines(userList, domains, new UTF8Encoding(false));
+                // Disable auto-update to avoid overwriting custom changes
+                SetAutoUpdateEnabled(installDir, false);
+                if (log != null) log("Применены пользовательские списки (Roblox/SoundCloud).");
+            }
+            catch (Exception ex)
+            {
+                if (log != null) log("Не удалось применить изменения списков: " + ex.Message);
             }
         }
 
@@ -916,7 +983,7 @@ namespace ZapretControl
 
         public static bool TgProxyPortOpen()
         {
-            return TcpAlive("127.0.0.1", GetTgProxyPort(), 700);
+            return TcpAlive("127.0.0.1", GetTgProxyPort(), 150);
         }
 
         public static string TgConfigPath
