@@ -1,5 +1,7 @@
 # Zapret Control
 
+[English version](#english)
+
 Приложение, которое помогает открыть YouTube, Discord, Roblox, SoundCloud и другие сайты, если они не работают у вашего провайдера.
 
 - **Windows** — готовое приложение (`ZapretControl.exe`)
@@ -76,3 +78,84 @@ src\build.bat
 [NOTICE.md](NOTICE.md)
 
 Используются: [zapret-discord-youtube](https://github.com/Flowseal/zapret-discord-youtube), [zapret-discord-youtube-linux](https://github.com/Sergeydigl3/zapret-discord-youtube-linux), [zapret-mac-discord-youtube](https://github.com/Flowseal/zapret-mac-discord-youtube), [tg-ws-proxy](https://github.com/Flowseal/tg-ws-proxy).
+
+---
+
+# English
+
+Application that helps access YouTube, Discord, Roblox, SoundCloud and other sites when they don't work with your provider.
+
+- **Windows** — ready-to-use application (`ZapretControl.exe`)
+- **Linux** — application built from source (Python/Tkinter), `linux-app/`
+- **macOS** — application built from source (Swift/AppKit), `macos-app/`
+
+![Screenshot](docs/app-screenshot.png)
+
+## Installation
+
+### Windows
+1. Download `ZapretControl-windows.zip` from [Releases](../../releases) and unpack it.
+2. Run `ZapretControl.exe` as administrator.
+3. Choose a strategy and click **Apply**. If it doesn't work, try another one.
+
+### Linux
+1. Download `ZapretControl-linux-src.zip` from [Releases](../../releases) and unpack it (or use the `linux-app/` folder).
+2. Install the dependencies: Python 3.8+, `python3-tk`, `git`, `curl`, `nftables`.
+3. Run:
+   ```bash
+   cd linux-app
+   python3 zapret_control_linux.py
+   ```
+   The app lets you install the zapret base, choose a strategy, and manage the service and TgProxy. Building a single-file executable with PyInstaller is described in `linux-app/README.md`.
+
+### macOS
+1. Download `ZapretControl-macos-src.zip` from [Releases](../../releases) and unpack it (or use the `macos-app/` folder).
+2. On a Mac (macOS 13+, Xcode Command Line Tools), build it:
+   ```bash
+   cd macos-app
+   chmod +x build.sh
+   ./build.sh
+   ```
+3. Open `build/ZapretControl.app` (you can move it to `/Applications`). If macOS blocks it, allow it in Security settings.
+4. From the menu you can install/start TgProxy and enable autostart; for the bypass itself, open the Zapret app for macOS and configure the strategy/IPSet there.
+
+There are no ready-made Linux or macOS binaries in the release — only sources that must be built on your system. The repository also contains script bundles in `linux/` and `macos/`.
+
+## What the settings do
+
+### Windows
+- **Strategy + Apply** — switches the bypass method. If a site doesn't open, another strategy usually helps.
+- **zapret service** — start, stop, and restart the service that performs the bypass.
+- **Service autostart** — start the service together with Windows.
+- **Checks** — quickly shows whether YouTube, Discord, Roblox, SoundCloud, and Telegram are reachable.
+- **Game Filter** — apply the bypass to game traffic: `disabled` / `tcp` / `udp` / `all`.
+- **IPSet Filter** — which IP list to use: `loaded` / `none` / `any`.
+- **Auto-Update** — automatically update zapret components (if supported by the build).
+- **App autostart** — launch Zapret Control itself when you sign in.
+- **Replace fakes** — refresh the current fake/bin files.
+- **Save** — saves the settings (the required parameters are applied immediately).
+- **Telegram / TgProxy** — a local proxy for Telegram Desktop: install, start/stop, choose the port, connect Telegram, and change proxy parameters (host/port, buffers, pool, cfproxy/h2/no_secure, etc.).
+
+### Linux
+- **zapret base** — where the zapret base is located and installed from; strategies and service control are taken from there as well.
+- **TgProxy** — install, start/stop, port, autostart (user `systemd`).
+- **App autostart** — adds the app to the user's autostart.
+- **Checks** — a simple site availability check.
+
+### macOS
+- **TgProxy** — install, start/stop, and autostart (LaunchAgent).
+- **Zapret for macOS** — opens the app for configuring strategies, lists, and IPSet.
+- **App autostart** — autostart via LaunchAgent.
+- **Checks** — a simple site availability check.
+
+## Build (Windows)
+
+```bat
+src\build.bat
+```
+
+## Components
+
+[NOTICE.md](NOTICE.md)
+
+Used: [zapret-discord-youtube](https://github.com/Flowseal/zapret-discord-youtube), [zapret-discord-youtube-linux](https://github.com/Sergeydigl3/zapret-discord-youtube-linux), [zapret-mac-discord-youtube](https://github.com/Flowseal/zapret-mac-discord-youtube), [tg-ws-proxy](https://github.com/Flowseal/tg-ws-proxy).
