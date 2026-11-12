@@ -1,15 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ZAPRET_DIR="$SCRIPT_DIR/.runtime/zapret-discord-youtube-linux"
 SERVICE_SH="$ZAPRET_DIR/service.sh"
-
 run_zapret() {
   [ -f "$SERVICE_SH" ] || { echo "База не установлена. Запустите ./install.sh" >&2; exit 1; }
   (cd "$ZAPRET_DIR" && bash ./service.sh "$@")
 }
-
 menu() {
   while true; do
     echo; echo "=== Zapret Control (Linux) ==="
@@ -30,7 +27,6 @@ menu() {
     esac
   done
 }
-
 case "${1:-}" in
   "" ) menu ;;
   install) "$SCRIPT_DIR/install.sh" ;;

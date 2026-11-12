@@ -2,12 +2,10 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 SCRIPT_DIR="$(pwd)"; RUNTIME_DIR="$SCRIPT_DIR/.runtime"
-
 open_zapret() {
   local app; app="$(find "$RUNTIME_DIR" -maxdepth 2 -name '*Zapret*.app' 2>/dev/null | head -1 || true)"
   [ -n "$app" ] && open "$app" || echo "ZapretMac не найден. Запустите ./install.command"
 }
-
 menu() {
   while true; do
     echo; echo "=== Zapret Control (macOS) ==="
@@ -22,7 +20,6 @@ menu() {
     esac
   done
 }
-
 case "${1:-}" in
   install) "$SCRIPT_DIR/install.command" ;; zapret) open_zapret ;; tgproxy) shift; "$SCRIPT_DIR/tgproxy.command" "$@" ;; *) menu ;;
 esac

@@ -19,7 +19,7 @@ echo Сборка ZapretControl.exe ...
   /resource:..\ArgDump.exe,ZapretControl.ArgDump.exe ^
   /r:System.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.ServiceProcess.dll ^
   /r:System.IO.Compression.dll /r:System.IO.Compression.FileSystem.dll ^
-  Program.cs Core.cs Controls.cs MainForm.cs AssemblyInfo.cs
+  Program.cs Core.cs Loc.cs Controls.cs MainForm.cs AssemblyInfo.cs
 if errorlevel 1 goto fail
 
 echo.

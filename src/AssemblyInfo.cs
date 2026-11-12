@@ -1,6 +1,5 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Runtime.InteropServices;
-
 [assembly: AssemblyTitle("Zapret Control")]
 [assembly: AssemblyDescription("Графическая панель для zapret-discord-youtube")]
 [assembly: AssemblyProduct("Zapret Control")]

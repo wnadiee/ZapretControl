@@ -1,10 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Text;
 using System.Windows.Forms;
-
 namespace ZapretControl
 {
     internal static class Ui
@@ -20,7 +19,6 @@ namespace ZapretControl
             }
             if (d > r.Width) d = r.Width;
             if (d > r.Height) d = r.Height;
-
             path.AddArc(r.Left, r.Top, d, d, 180, 90);
             path.AddArc(r.Right - d, r.Top, d, d, 270, 90);
             path.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
@@ -28,7 +26,6 @@ namespace ZapretControl
             path.CloseFigure();
             return path;
         }
-
         public static void RoundRegion(Control control, int radius)
         {
             if (control.Width <= 0 || control.Height <= 0) return;
@@ -36,12 +33,10 @@ namespace ZapretControl
                 control.Region = new Region(path);
         }
     }
-
     public class PowerButton : Control
     {
         private bool _on;
         private bool _hover;
-
         public bool On
         {
             get { return _on; }
@@ -52,7 +47,6 @@ namespace ZapretControl
                 Invalidate();
             }
         }
-
         public PowerButton()
         {
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint |
@@ -62,46 +56,37 @@ namespace ZapretControl
             Size = new Size(72, 72);
             Cursor = Cursors.Hand;
         }
-
         protected override void OnMouseEnter(EventArgs e)
         {
             base.OnMouseEnter(e);
             _hover = true;
             Invalidate();
         }
-
         protected override void OnMouseLeave(EventArgs e)
         {
             base.OnMouseLeave(e);
             _hover = false;
             Invalidate();
         }
-
         protected override void OnPaint(PaintEventArgs e)
         {
             var g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
-
             Color baseColor = _on
                 ? Color.FromArgb(46, 204, 113)
                 : Color.FromArgb(62, 66, 78);
             if (_hover) baseColor = _on
                 ? Color.FromArgb(58, 220, 128)
                 : Color.FromArgb(78, 82, 96);
-
             using (var brush = new SolidBrush(Color.FromArgb(24, baseColor)))
                 g.FillEllipse(brush, 0, 0, Width - 1, Height - 1);
-
             using (var brush = new SolidBrush(baseColor))
                 g.FillEllipse(brush, 5, 5, Width - 11, Height - 11);
-
             using (var pen = new Pen(Color.FromArgb(120, baseColor), 1f))
                 g.DrawEllipse(pen, 0.5f, 0.5f, Width - 2, Height - 2);
-
             int cx = Width / 2;
             int cy = Height / 2;
             var arc = new Rectangle(cx - 13, cy - 13, 26, 26);
-
             using (var pen = new Pen(Color.White, 4f))
             {
                 pen.StartCap = LineCap.Round;
@@ -111,17 +96,14 @@ namespace ZapretControl
             }
         }
     }
-
     public class Dot : Control
     {
         private Color _color;
-
         public Color Color
         {
             get { return _color; }
             set { _color = value; Invalidate(); }
         }
-
         public Dot()
         {
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint |
@@ -130,26 +112,21 @@ namespace ZapretControl
             Size = new Size(12, 12);
             _color = Color.FromArgb(120, 124, 136);
         }
-
         protected override void OnPaint(PaintEventArgs e)
         {
             var g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
-
             using (var glow = new SolidBrush(Color.FromArgb(45, _color)))
                 g.FillEllipse(glow, 0, 0, Width - 1, Height - 1);
             using (var brush = new SolidBrush(_color))
                 g.FillEllipse(brush, 2, 2, Width - 5, Height - 5);
         }
     }
-
     public class ToggleSwitch : Control
     {
         private bool _checked;
         private bool _hover;
-
         public event EventHandler CheckedChanged;
-
         public ToggleSwitch()
         {
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint |
@@ -159,7 +136,6 @@ namespace ZapretControl
             Size = new Size(56, 28);
             Cursor = Cursors.Hand;
         }
-
         public bool Checked
         {
             get { return _checked; }
@@ -172,53 +148,43 @@ namespace ZapretControl
                 if (handler != null) handler(this, EventArgs.Empty);
             }
         }
-
         protected override void OnClick(EventArgs e)
         {
             base.OnClick(e);
             Checked = !Checked;
         }
-
         protected override void OnMouseEnter(EventArgs e)
         {
             base.OnMouseEnter(e);
             _hover = true;
             Invalidate();
         }
-
         protected override void OnMouseLeave(EventArgs e)
         {
             base.OnMouseLeave(e);
             _hover = false;
             Invalidate();
         }
-
         protected override void OnPaint(PaintEventArgs e)
         {
             var g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
-
             var track = new Rectangle(0, 1, Width - 1, Height - 3);
             Color onColor = Color.FromArgb(46, 204, 113);
             Color offColor = _hover ? Color.FromArgb(82, 86, 100) : Color.FromArgb(60, 63, 76);
-
             using (var path = Ui.RoundRect(track, track.Height / 2))
             using (var brush = new SolidBrush(_checked ? onColor : offColor))
                 g.FillPath(brush, path);
-
             int knob = track.Height - 6;
             int kx = _checked ? track.Right - knob - 3 : track.Left + 3;
             int ky = track.Top + 3;
-
             using (var brush = new SolidBrush(Color.White))
                 g.FillEllipse(brush, kx, ky, knob, knob);
         }
     }
-
     public class StatusPill : Control
     {
         private bool _active;
-
         public bool Active
         {
             get { return _active; }
@@ -229,26 +195,22 @@ namespace ZapretControl
                 Invalidate();
             }
         }
-
         public StatusPill()
         {
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint |
                      ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
             Size = new Size(182, 44);
         }
-
         protected override void OnPaint(PaintEventArgs e)
         {
             var g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
-
             Color green = Color.FromArgb(46, 204, 113);
             Color fill = _active ? Color.FromArgb(32, 60, 45) : Color.FromArgb(32, 34, 42);
             Color border = _active ? Color.FromArgb(46, 204, 113) : Color.FromArgb(58, 61, 72);
             Color dot = _active ? green : Color.FromArgb(120, 124, 136);
             Color textColor = _active ? Color.FromArgb(126, 232, 166) : Color.FromArgb(150, 154, 165);
-
             var rect = new Rectangle(0, 0, Width - 1, Height - 1);
             using (var path = Ui.RoundRect(rect, Height / 2))
             {
@@ -257,17 +219,146 @@ namespace ZapretControl
                 using (var pen = new Pen(border, 1f))
                     g.DrawPath(pen, path);
             }
-
             using (var brush = new SolidBrush(dot))
                 g.FillEllipse(brush, 16, Height / 2 - 5, 10, 10);
-
-            string text = _active ? "АКТИВЕН" : "ВЫКЛЮЧЕН";
+            string text = _active ? Loc.S("АКТИВЕН", "ACTIVE") : Loc.S("ВЫКЛЮЧЕН", "INACTIVE");
             using (var font = new Font("Segoe UI Semibold", 8.5f))
             using (var brush = new SolidBrush(textColor))
                 g.DrawString(text, font, brush, new PointF(36, Height / 2 - 9));
         }
     }
-
+    public class NiceButton : Button
+    {
+        private bool _hover;
+        private bool _down;
+        public bool Accent { get; set; }
+        public NiceButton()
+        {
+            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint |
+                     ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+            FlatStyle = FlatStyle.Flat;
+            FlatAppearance.BorderSize = 0;
+            ForeColor = Color.White;
+            Cursor = Cursors.Hand;
+            Font = new Font("Segoe UI Semibold", 9f);
+        }
+        protected override void OnMouseEnter(EventArgs e) { base.OnMouseEnter(e); _hover = true; Invalidate(); }
+        protected override void OnMouseLeave(EventArgs e) { base.OnMouseLeave(e); _hover = false; _down = false; Invalidate(); }
+        protected override void OnMouseDown(MouseEventArgs e) { base.OnMouseDown(e); if (e.Button == MouseButtons.Left) { _down = true; Invalidate(); } }
+        protected override void OnMouseUp(MouseEventArgs e) { base.OnMouseUp(e); _down = false; Invalidate(); }
+        protected override bool ShowFocusCues { get { return false; } }
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            var g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+            g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
+            try { if (Parent != null) g.Clear(Parent.BackColor); } catch { }
+            var rect = new Rectangle(0, 0, Width - 1, Height - 1);
+            int radius = Math.Min(12, Math.Max(6, Height / 3));
+            Color c1, c2, border, textCol;
+            if (Accent)
+            {
+                c1 = _down ? Color.FromArgb(98, 78, 170) : (_hover ? Color.FromArgb(110, 88, 196) : Color.FromArgb(84, 66, 150));
+                c2 = _down ? Color.FromArgb(70, 58, 130) : (_hover ? Color.FromArgb(80, 64, 150) : Color.FromArgb(58, 48, 114));
+                border = _hover ? Color.FromArgb(150, 130, 230) : Color.FromArgb(116, 96, 198);
+                textCol = Color.White;
+            }
+            else
+            {
+                c1 = _down ? Color.FromArgb(50, 54, 66) : (_hover ? Color.FromArgb(46, 50, 62) : Color.FromArgb(38, 41, 51));
+                c2 = _down ? Color.FromArgb(42, 46, 56) : (_hover ? Color.FromArgb(38, 42, 52) : Color.FromArgb(30, 33, 42));
+                border = _hover ? Color.FromArgb(86, 92, 110) : Color.FromArgb(60, 64, 78);
+                textCol = Enabled ? Color.FromArgb(236, 237, 241) : Color.FromArgb(120, 124, 136);
+            }
+            using (var path = Ui.RoundRect(rect, radius))
+            {
+                using (var brush = new LinearGradientBrush(rect, c1, c2, LinearGradientMode.Vertical))
+                    g.FillPath(brush, path);
+                using (var pen = new Pen(border, 1f))
+                    g.DrawPath(pen, path);
+            }
+            var textRect = new Rectangle(4, 0, Math.Max(0, Width - 8), Height);
+            TextRenderer.DrawText(g, Text, Font, textRect, textCol, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
+        }
+    }
+    public class LangToggleButton : Control
+    {
+        private float _pos;
+        private float _target;
+        private readonly Timer _anim;
+        public event EventHandler Toggled;
+        public LangToggleButton()
+        {
+            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint |
+                     ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw |
+                     ControlStyles.SupportsTransparentBackColor, true);
+            Size = new Size(92, 34);
+            Cursor = Cursors.Hand;
+            _pos = _target = Loc.En ? 1f : 0f;
+            _anim = new Timer();
+            _anim.Interval = 15;
+            _anim.Tick += delegate
+            {
+                float step = 0.18f;
+                if (Math.Abs(_target - _pos) <= step) { _pos = _target; _anim.Stop(); }
+                else _pos += (_target > _pos) ? step : -step;
+                Invalidate();
+            };
+        }
+        public bool IsEnglish { get { return _target >= 0.5f; } }
+        public void Sync()
+        {
+            _target = Loc.En ? 1f : 0f;
+            _pos = _target;
+            Invalidate();
+        }
+        protected override void OnClick(EventArgs e)
+        {
+            base.OnClick(e);
+            _target = (_target < 0.5f) ? 1f : 0f;
+            _anim.Start();
+            if (Toggled != null) Toggled(this, EventArgs.Empty);
+        }
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && _anim != null) _anim.Dispose();
+            base.Dispose(disposing);
+        }
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            var g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
+            var rect = new Rectangle(0, 0, Width - 1, Height - 1);
+            using (var path = Ui.RoundRect(rect, Height / 2))
+            using (var bg = new SolidBrush(Color.FromArgb(34, 36, 45)))
+            using (var pen = new Pen(Color.FromArgb(58, 48, 96), 1f))
+            {
+                g.FillPath(bg, path);
+                g.DrawPath(pen, path);
+            }
+            int pad = 3;
+            int knobW = (Width - pad * 2) / 2;
+            int knobX = pad + (int)((Width - pad * 2 - knobW) * _pos);
+            var knob = new Rectangle(knobX, pad, knobW, Height - pad * 2 - 1);
+            using (var path = Ui.RoundRect(knob, knob.Height / 2))
+            using (var brush = new LinearGradientBrush(knob, Color.FromArgb(124, 92, 255), Color.FromArgb(88, 140, 255), LinearGradientMode.Horizontal))
+                g.FillPath(brush, path);
+            using (var font = new Font("Segoe UI Semibold", 8f))
+            {
+                Color left = _pos < 0.5f ? Color.White : Color.FromArgb(150, 154, 165);
+                Color right = _pos >= 0.5f ? Color.White : Color.FromArgb(150, 154, 165);
+                using (var b1 = new SolidBrush(left))
+                using (var b2 = new SolidBrush(right))
+                using (var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
+                {
+                    g.DrawString("RU", font, b1, new RectangleF(pad, 0, knobW, Height), sf);
+                    g.DrawString("EN", font, b2, new RectangleF(Width / 2f, 0, knobW, Height), sf);
+                }
+            }
+        }
+    }
     public class StrategySelector : Control
     {
         private static readonly Color Fill = Color.FromArgb(34, 36, 45);
@@ -275,15 +366,12 @@ namespace ZapretControl
         private static readonly Color BorderHover = Color.FromArgb(92, 78, 160);
         private static readonly Color TextColor = Color.FromArgb(236, 237, 241);
         private static readonly Color Dim = Color.FromArgb(120, 124, 136);
-
         private readonly List<string> _items = new List<string>();
         private int _selectedIndex = -1;
         private bool _hover;
         private Form _popup;
         private ListBox _list;
-
         public event EventHandler SelectionChanged;
-
         public StrategySelector()
         {
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint |
@@ -291,12 +379,10 @@ namespace ZapretControl
             Height = 34;
             Cursor = Cursors.Hand;
         }
-
         public int SelectedIndex
         {
             get { return _selectedIndex; }
         }
-
         public string SelectedItem
         {
             get
@@ -305,38 +391,32 @@ namespace ZapretControl
                 return _items[_selectedIndex];
             }
         }
-
         public void SetItems(List<string> items, int selectedIndex)
         {
             ClosePopup();
             _items.Clear();
             if (items != null) _items.AddRange(items);
-
             if (selectedIndex < 0 || selectedIndex >= _items.Count) selectedIndex = -1;
             _selectedIndex = selectedIndex;
             Invalidate();
         }
-
         protected override void OnMouseEnter(EventArgs e)
         {
             base.OnMouseEnter(e);
             _hover = true;
             Invalidate();
         }
-
         protected override void OnMouseLeave(EventArgs e)
         {
             base.OnMouseLeave(e);
             _hover = false;
             Invalidate();
         }
-
         protected override void OnPaint(PaintEventArgs e)
         {
             var g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
-
             var rect = new Rectangle(0, 0, Width - 1, Height - 1);
             using (var path = Ui.RoundRect(rect, 10))
             {
@@ -345,8 +425,7 @@ namespace ZapretControl
                 using (var pen = new Pen(Enabled ? (_hover ? BorderHover : Border) : Color.FromArgb(42, 45, 54), 1f))
                     g.DrawPath(pen, path);
             }
-
-            string text = SelectedItem ?? (_items.Count == 0 ? "Стратегии не найдены" : "Выберите стратегию");
+            string text = SelectedItem ?? (_items.Count == 0 ? Loc.S("Стратегии не найдены", "No strategies found") : Loc.S("Выберите стратегию", "Select strategy"));
             using (var font = new Font("Segoe UI", 9.5f))
             using (var brush = new SolidBrush(Enabled ? TextColor : Dim))
             using (var format = new StringFormat())
@@ -357,7 +436,6 @@ namespace ZapretControl
                 g.DrawString(text, font, brush,
                     new RectangleF(12, 0, Width - 42, Height), format);
             }
-
             using (var pen = new Pen(Enabled ? Color.FromArgb(150, 155, 170) : Dim, 1.8f))
             {
                 pen.StartCap = LineCap.Round;
@@ -368,14 +446,12 @@ namespace ZapretControl
                 g.DrawLine(pen, cx, cy + 2, cx + 4, cy - 2);
             }
         }
-
         protected override void OnClick(EventArgs e)
         {
             base.OnClick(e);
             if (!Enabled || _items.Count == 0) return;
             ShowMenu();
         }
-
         private void ShowMenu()
         {
             if (_popup != null)
@@ -383,18 +459,15 @@ namespace ZapretControl
                 ClosePopup();
                 return;
             }
-
             var screen = Screen.FromControl(this);
             var area = screen.WorkingArea;
             var host = FindForm();
-
             var popup = new Form();
             popup.FormBorderStyle = FormBorderStyle.None;
             popup.ShowInTaskbar = false;
             popup.StartPosition = FormStartPosition.Manual;
             popup.BackColor = Color.FromArgb(52, 55, 66);
             popup.Padding = new Padding(1);
-
             var list = new ListBox();
             list.BorderStyle = BorderStyle.None;
             list.BackColor = Color.FromArgb(30, 32, 40);
@@ -404,14 +477,12 @@ namespace ZapretControl
             list.ItemHeight = 28;
             list.IntegralHeight = false;
             list.Dock = DockStyle.Fill;
-
             foreach (var item in _items) list.Items.Add(item);
             if (_selectedIndex >= 0)
             {
                 list.SelectedIndex = _selectedIndex;
                 list.TopIndex = _selectedIndex;
             }
-
             list.DrawItem += delegate(object s, DrawItemEventArgs e)
             {
                 if (e.Index < 0) return;
@@ -428,13 +499,11 @@ namespace ZapretControl
                         new RectangleF(e.Bounds.X + 10, e.Bounds.Y, e.Bounds.Width - 16, e.Bounds.Height), format);
                 }
             };
-
             list.Click += delegate
             {
                 if (list.SelectedIndex >= 0) Commit(list.SelectedIndex);
                 else ClosePopup();
             };
-
             list.KeyDown += delegate(object s, KeyEventArgs e)
             {
                 if (e.KeyCode == Keys.Enter)
@@ -449,7 +518,6 @@ namespace ZapretControl
                     ClosePopup();
                 }
             };
-
             popup.Deactivate += delegate { ClosePopup(); };
             if (host != null)
             {
@@ -457,11 +525,9 @@ namespace ZapretControl
                 host.Resize += delegate { ClosePopup(); };
             }
             popup.Controls.Add(list);
-
             int desired = _items.Count * 28 + 2;
             int maxHeight = Math.Max(120, area.Height - 40);
             if (desired > maxHeight) desired = maxHeight;
-
             var below = PointToScreen(new Point(0, Height + 2));
             int y = below.Y;
             if (y + desired > area.Bottom)
@@ -469,15 +535,12 @@ namespace ZapretControl
                 int aboveY = PointToScreen(new Point(0, 0)).Y - desired - 2;
                 y = Math.Max(area.Top, aboveY);
             }
-
             popup.SetBounds(below.X, y, Math.Max(Width, 380), desired);
-
             _popup = popup;
             _list = list;
             popup.Show(host);
             list.Focus();
         }
-
         private void Commit(int index)
         {
             ClosePopup();
@@ -487,7 +550,6 @@ namespace ZapretControl
             var handler = SelectionChanged;
             if (handler != null) handler(this, EventArgs.Empty);
         }
-
         private void ClosePopup()
         {
             var popup = _popup;
